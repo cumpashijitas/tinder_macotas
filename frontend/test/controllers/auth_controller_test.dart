@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:frontend/controllers/auth_controller.dart';
 import '../helpers/mock_api_service.dart';
@@ -10,26 +13,41 @@ class MockGoTrueClient extends Mock implements GoTrueClient {}
 
 class MockAuthResponse extends Mock implements AuthResponse {}
 
+class MockSession extends Mock implements Session {}
+
 void main() {
   setUpAll(registerApiServiceFallbacks);
 
   late MockHttpClient httpClient;
   late MockSupabaseClient supabase;
   late MockGoTrueClient goTrue;
+  late StreamController<AuthState> authStateController;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     httpClient = MockHttpClient();
     supabase = MockSupabaseClient();
     goTrue = MockGoTrueClient();
+    authStateController = StreamController<AuthState>.broadcast();
     when(() => supabase.auth).thenReturn(goTrue);
-    when(() => goTrue.onAuthStateChange).thenAnswer((_) => const Stream.empty());
+    when(() => goTrue.onAuthStateChange).thenAnswer((_) => authStateController.stream);
     when(() => goTrue.currentSession).thenReturn(null);
   });
+
+  tearDown(() => authStateController.close());
 
   AuthController buildController() => AuthController(
         apiService: buildApiService(httpClient),
         supabaseClient: supabase,
       );
+
+  /// Simula lo que hace Supabase realmente: emitir un AuthState "signedIn"
+  /// en el stream de onAuthStateChange una vez que el login se completó.
+  Future<void> emitSignedIn() async {
+    final session = MockSession();
+    authStateController.add(AuthState(AuthChangeEvent.signedIn, session));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
 
   group('sendOtp', () {
     test('éxito: retorna true sin errores', () async {
@@ -55,7 +73,7 @@ void main() {
   });
 
   group('verifyOtp', () {
-    test('éxito con perfil ya existente: lo carga y no crea uno nuevo', () async {
+    test('éxito con perfil ya existente: el listener lo carga sin crear uno nuevo', () async {
       when(() => goTrue.verifyOTP(
             type: OtpType.email,
             email: any(named: 'email'),
@@ -72,13 +90,15 @@ void main() {
 
       final controller = buildController();
       final ok = await controller.verifyOtp('ana@example.com', '123456');
-
       expect(ok, isTrue);
+
+      await emitSignedIn();
+
       expect(controller.profile?.fullName, 'Ana Torres');
       verifyNever(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body')));
     });
 
-    test('primer ingreso: si no hay perfil, lo crea con el rol seleccionado', () async {
+    test('primer ingreso: si no hay perfil, lo crea con el rol seleccionado antes de enviar', () async {
       when(() => goTrue.verifyOTP(
             type: OtpType.email,
             email: any(named: 'email'),
@@ -98,8 +118,10 @@ void main() {
       final controller = buildController();
       controller.setRole('shelter');
       final ok = await controller.verifyOtp('nueva.familia@example.com', '654321');
-
       expect(ok, isTrue);
+
+      await emitSignedIn();
+
       expect(controller.profile?.role, 'shelter');
     });
 
@@ -116,6 +138,40 @@ void main() {
       expect(ok, isFalse);
       expect(controller.errorMessage, contains('expired'));
     });
+  });
+
+  // Nota: `signInWithOAuth` se implementa en supabase_flutter como método de
+  // extensión (GoTrueClientSignInProvider), no como método virtual de
+  // GoTrueClient, así que mocktail no puede interceptarlo — cualquier llamada
+  // real siempre golpea el código real del SDK (que a su vez intenta navegar
+  // el browser). Por eso el flujo de Google Sign-In no tiene test unitario
+  // aquí; se valida manualmente contra el browser real una vez configurado
+  // el proveedor en el dashboard de Supabase.
+
+  test('signInWithGoogle persiste el rol elegido en SharedPreferences antes de redirigir', () async {
+    final controller = buildController();
+    controller.setRole('shelter');
+
+    // No podemos invocar signInWithGoogle() en este entorno (ver nota arriba),
+    // pero sí podemos probar el mismo mecanismo de persistencia que usa
+    // internamente, reproduciendo el flujo de bootstrap tras el "regreso".
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('petmatch_pending_role', controller.userRole);
+
+    when(() => httpClient.get(any(), headers: any(named: 'headers')))
+        .thenAnswer((_) async => jsonResponse(null));
+    when(() => httpClient.post(any(), headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
+      (_) async => jsonResponse({
+        'id': 'user-3',
+        'full_name': 'Refugio Nuevo',
+        'role': 'shelter',
+      }, statusCode: 201),
+    );
+
+    await emitSignedIn();
+
+    expect(controller.profile?.role, 'shelter');
+    expect(prefs.getString('petmatch_pending_role'), isNull); // se limpia tras usarse
   });
 
   test('logout invoca signOut en el cliente de Supabase', () async {

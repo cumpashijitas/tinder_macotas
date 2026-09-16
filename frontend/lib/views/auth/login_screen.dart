@@ -113,6 +113,54 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 28),
 
                 if (!_codeSent) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      onPressed: authController.isLoading
+                          ? null
+                          : () async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              final ok = await authController
+                                  .signInWithGoogle();
+                              if (!ok && mounted) {
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      authController.errorMessage ??
+                                          'No se pudo iniciar sesión con Google.',
+                                    ),
+                                  ),
+                                );
+                              }
+                              // En éxito, la página redirige a Google y vuelve;
+                              // AuthGate se encarga de mostrar el dashboard al volver.
+                            },
+                      icon: const Icon(Icons.g_mobiledata, size: 28, color: AppTheme.primaryColor),
+                      label: const Text('Continuar con Google'),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.grey[300]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: Colors.grey[300])),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          'o con tu correo',
+                          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: Colors.grey[300])),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
                   // Paso 1: Ingreso de correo
                   TextField(
                     controller: _emailController,
