@@ -1,0 +1,22 @@
+# Environment variables (never commit secrets)
+.env
+.env.local
+*.env
+!*.env.example
+
+# Node
+node_modules/
+dist/
+npm-debug.log*
+
+# Flutter/Dart (frontend already has its own .gitignore, this is a root-level backstop)
+frontend/.dart_tool/
+frontend/build/
+frontend/.flutter-plugins-dependencies
+
+# Editor/OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
