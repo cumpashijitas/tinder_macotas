@@ -1,6 +1,12 @@
 class AppConstants {
-  // URL del backend local (Android Emulator usa 10.0.2.2, Web/Dispositivo local usa localhost o tu IP)
-  static const String backendBaseUrl = 'http://localhost:3000/api';
+  // URL del backend. Por defecto apunta al servidor local de desarrollo
+  // (Android Emulator usa 10.0.2.2, Web/Dispositivo local usa localhost o tu IP).
+  // Para producción, compilar con:
+  //   flutter build web --dart-define=BACKEND_BASE_URL=https://tu-backend.vercel.app/api
+  static const String backendBaseUrl = String.fromEnvironment(
+    'BACKEND_BASE_URL',
+    defaultValue: 'http://localhost:3000/api',
+  );
 
   // Configuración de Supabase Cloud (proyecto "t adopcion")
   static const String supabaseUrl = 'https://zvsvsopywivrfoyvkinj.supabase.co';

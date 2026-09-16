@@ -42,8 +42,9 @@ app.use((_req, res) => {
   ResponseView.notFound(res, 'Ruta no encontrada');
 });
 
-// Inicio del servidor
-if (process.env.NODE_ENV !== 'test') {
+// Inicio del servidor (se omite en tests y en el entorno serverless de Vercel,
+// que invoca el export por request en lugar de mantener un puerto abierto)
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   app.listen(ENV.PORT, () => {
     console.log(`🐾 Servidor PetMatch Backend escuchando en http://localhost:${ENV.PORT}`);
     console.log(`🌍 Entorno: ${ENV.NODE_ENV}`);
