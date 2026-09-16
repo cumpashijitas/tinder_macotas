@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/theme/app_theme.dart';
-import '../../models/pet_model.dart';
 import '../../controllers/swipe_controller.dart';
-import '../../controllers/auth_controller.dart';
 
 class RelocationRequestScreen extends StatefulWidget {
   const RelocationRequestScreen({super.key});
 
   @override
-  State<RelocationRequestScreen> createState() => _RelocationRequestScreenState();
+  State<RelocationRequestScreen> createState() =>
+      _RelocationRequestScreenState();
 }
 
 class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
@@ -59,54 +59,62 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
     if (!_swornStatement || !_acceptsReview) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Debes aceptar la declaración jurada y los términos de evaluación.'),
+          content: Text(
+            'Debes aceptar la declaración jurada y los términos de evaluación.',
+          ),
           backgroundColor: AppTheme.rejectRed,
         ),
       );
       return;
     }
 
-    final authController = Provider.of<AuthController>(context, listen: false);
-    final swipeController = Provider.of<SwipeController>(context, listen: false);
+    final swipeController = Provider.of<SwipeController>(
+      context,
+      listen: false,
+    );
+    final messenger = ScaffoldMessenger.of(context);
 
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(milliseconds: 700));
-    if (!mounted) return;
 
-    final relocatedPet = PetModel(
-      id: 'relocated_${DateTime.now().millisecondsSinceEpoch}',
-      shelterId: authController.currentUserEmail ?? 'user_relocating',
-      publisherType: 'individual_rescuer',
-      name: _nameController.text.trim(),
-      species: _species,
-      breed: _breedController.text.trim(),
-      ageYears: double.tryParse(_ageController.text.trim()) ?? 2.0,
-      gender: _gender,
-      size: _size,
-      energyLevel: _energyLevel,
-      origin: 'relinquished',
-      isLitter: false,
-      weaningCompleted: true,
-      isVaccinated: _isVaccinated,
-      isNeutered: _isNeutered,
-      hasMicrochip: _hasMicrochip,
-      houseTrained: _houseTrained,
-      goodWithDogs: _goodWithDogs,
-      goodWithCats: _goodWithCats,
-      goodWithKids: _goodWithKids,
-      requiresYard: _size == 'large' || _size == 'giant',
-      story: _storyController.text.trim().isNotEmpty
+    final payload = {
+      'name': _nameController.text.trim(),
+      'species': _species,
+      'breed': _breedController.text.trim(),
+      'age_years': double.tryParse(_ageController.text.trim()) ?? 2.0,
+      'gender': _gender,
+      'size': _size,
+      'energy_level': _energyLevel,
+      'is_vaccinated': _isVaccinated,
+      'is_neutered': _isNeutered,
+      'has_microchip': _hasMicrochip,
+      'house_trained': _houseTrained,
+      'good_with_dogs': _goodWithDogs,
+      'good_with_cats': _goodWithCats,
+      'good_with_kids': _goodWithKids,
+      'story': _storyController.text.trim().isNotEmpty
           ? _storyController.text.trim()
           : 'Mascota en búsqueda urgente de hogar responsable por fuerza mayor.',
-      photos: [_photoUrlController.text.trim()],
-      status: 'available',
-      relocationReason: _reasonController.text.trim(),
-    );
+      'photos': [_photoUrlController.text.trim()],
+      'relocation_reason': _reasonController.text.trim(),
+    };
 
-    swipeController.addPet(relocatedPet);
+    final relocatedPet = await swipeController.submitRelocation(payload);
 
     if (!mounted) return;
     setState(() => _isSubmitting = false);
+
+    if (relocatedPet == null) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            swipeController.errorMessage ??
+                'No se pudo enviar la solicitud de reubicación',
+          ),
+          backgroundColor: AppTheme.rejectRed,
+        ),
+      );
+      return;
+    }
 
     showDialog(
       context: context,
@@ -139,9 +147,7 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reubicación por Fuerza Mayor'),
-      ),
+      appBar: AppBar(title: const Text('Reubicación por Fuerza Mayor')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Center(
@@ -163,7 +169,11 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.shield_outlined, color: Colors.amber, size: 28),
+                        const Icon(
+                          Icons.shield_outlined,
+                          color: Colors.amber,
+                          size: 28,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -171,12 +181,20 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                             children: [
                               const Text(
                                 'Módulo Excepcional y Auditado',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.brown),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Colors.brown,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'PetMatch es una plataforma de adopción ética y tenencia responsable. No permitimos el descarte de animales ni la comercialización. Esta sección es estrictamente para reubicaciones por causas de fuerza mayor debidamente justificadas.',
-                                style: TextStyle(fontSize: 12, color: Colors.brown[900], height: 1.3),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.brown[900],
+                                  height: 1.3,
+                                ),
                               ),
                             ],
                           ),
@@ -190,7 +208,11 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                   // Sección 1: Causa de Fuerza Mayor
                   const Text(
                     '1. Justificación de Causa de Fuerza Mayor',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textDark,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   const Text(
@@ -203,7 +225,9 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                     maxLines: 3,
                     decoration: InputDecoration(
                       hintText: 'Describe con claridad y honestidad la circunstancia de fuerza mayor...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     validator: (val) {
                       if (val == null || val.trim().length < 20) {
@@ -218,7 +242,11 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                   // Sección 2: Datos de la Mascota
                   const Text(
                     '2. Datos de la Mascota',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textDark,
+                    ),
                   ),
                   const SizedBox(height: 12),
 
@@ -227,9 +255,13 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                     decoration: InputDecoration(
                       labelText: 'Nombre de la Mascota',
                       prefixIcon: const Icon(Icons.pets),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingresa el nombre' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Ingresa el nombre'
+                        : null,
                   ),
                   const SizedBox(height: 14),
 
@@ -241,13 +273,28 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Especie',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                           items: const [
-                            DropdownMenuItem(value: 'dog', child: Text('🐶 Perro', overflow: TextOverflow.ellipsis)),
-                            DropdownMenuItem(value: 'cat', child: Text('🐱 Gato', overflow: TextOverflow.ellipsis)),
+                            DropdownMenuItem(
+                              value: 'dog',
+                              child: Text(
+                                '🐶 Perro',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'cat',
+                              child: Text(
+                                '🐱 Gato',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
-                          onChanged: (val) => setState(() => _species = val ?? 'dog'),
+                          onChanged: (val) =>
+                              setState(() => _species = val ?? 'dog'),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -257,13 +304,28 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Sexo',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                           items: const [
-                            DropdownMenuItem(value: 'male', child: Text('Macho', overflow: TextOverflow.ellipsis)),
-                            DropdownMenuItem(value: 'female', child: Text('Hembra', overflow: TextOverflow.ellipsis)),
+                            DropdownMenuItem(
+                              value: 'male',
+                              child: Text(
+                                'Macho',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'female',
+                              child: Text(
+                                'Hembra',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
-                          onChanged: (val) => setState(() => _gender = val ?? 'male'),
+                          onChanged: (val) =>
+                              setState(() => _gender = val ?? 'male'),
                         ),
                       ),
                     ],
@@ -277,9 +339,13 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                           controller: _breedController,
                           decoration: InputDecoration(
                             labelText: 'Raza o Cruza',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
-                          validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingresa la raza' : null,
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Ingresa la raza'
+                              : null,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -289,9 +355,14 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             labelText: 'Edad (años)',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
-                          validator: (v) => (v == null || double.tryParse(v) == null) ? 'Edad inválida' : null,
+                          validator: (v) =>
+                              (v == null || double.tryParse(v) == null)
+                              ? 'Edad inválida'
+                              : null,
                         ),
                       ),
                     ],
@@ -306,15 +377,42 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Tamaño',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                           items: const [
-                            DropdownMenuItem(value: 'small', child: Text('Pequeño', overflow: TextOverflow.ellipsis)),
-                            DropdownMenuItem(value: 'medium', child: Text('Mediano', overflow: TextOverflow.ellipsis)),
-                            DropdownMenuItem(value: 'large', child: Text('Grande', overflow: TextOverflow.ellipsis)),
-                            DropdownMenuItem(value: 'giant', child: Text('Gigante', overflow: TextOverflow.ellipsis)),
+                            DropdownMenuItem(
+                              value: 'small',
+                              child: Text(
+                                'Pequeño',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'medium',
+                              child: Text(
+                                'Mediano',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'large',
+                              child: Text(
+                                'Grande',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'giant',
+                              child: Text(
+                                'Gigante',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
-                          onChanged: (val) => setState(() => _size = val ?? 'medium'),
+                          onChanged: (val) =>
+                              setState(() => _size = val ?? 'medium'),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -324,10 +422,23 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: 'Energía (1 al 5)',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
-                          items: [1, 2, 3, 4, 5].map((e) => DropdownMenuItem(value: e, child: Text('$e / 5', overflow: TextOverflow.ellipsis))).toList(),
-                          onChanged: (val) => setState(() => _energyLevel = val ?? 3),
+                          items: [1, 2, 3, 4, 5]
+                              .map(
+                                (e) => DropdownMenuItem(
+                                  value: e,
+                                  child: Text(
+                                    '$e / 5',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (val) =>
+                              setState(() => _energyLevel = val ?? 3),
                         ),
                       ),
                     ],
@@ -339,9 +450,13 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                     decoration: InputDecoration(
                       labelText: 'URL de la Foto',
                       prefixIcon: const Icon(Icons.photo_camera_outlined),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingresa una foto' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Ingresa una foto'
+                        : null,
                   ),
 
                   const SizedBox(height: 14),
@@ -350,7 +465,9 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                     maxLines: 3,
                     decoration: InputDecoration(
                       labelText: 'Historia, hábitos y carácter de la mascota',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                   ),
 
@@ -359,7 +476,11 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                   // Sección 3: Plan Clínico y Sanitario
                   const Text(
                     '3. Plan Clínico y Vacunación',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textDark,
+                    ),
                   ),
                   const SizedBox(height: 10),
 
@@ -383,7 +504,9 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                   ),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Acostumbrado/a a hacer sus necesidades afuera/arenero'),
+                    title: const Text(
+                      'Acostumbrado/a a hacer sus necesidades afuera/arenero',
+                    ),
                     value: _houseTrained,
                     onChanged: (val) => setState(() => _houseTrained = val),
                   ),
@@ -421,20 +544,28 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                           contentPadding: EdgeInsets.zero,
                           title: const Text(
                             'Declaro bajo juramento que esta solicitud responde exclusivamente a una causa de fuerza mayor y no persigue ningún fin de lucro ni comercialización.',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           value: _swornStatement,
-                          onChanged: (val) => setState(() => _swornStatement = val ?? false),
+                          onChanged: (val) =>
+                              setState(() => _swornStatement = val ?? false),
                         ),
                         const Divider(),
                         CheckboxListTile(
                           contentPadding: EdgeInsets.zero,
                           title: const Text(
                             'Acepto que mi solicitud sea auditada y evaluada por el equipo de moderación o refugio zonal antes de su publicación.',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           value: _acceptsReview,
-                          onChanged: (val) => setState(() => _acceptsReview = val ?? false),
+                          onChanged: (val) =>
+                              setState(() => _acceptsReview = val ?? false),
                         ),
                       ],
                     ),
@@ -455,7 +586,10 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
                               'Enviar Solicitud de Reubicación',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                     ),
                   ),

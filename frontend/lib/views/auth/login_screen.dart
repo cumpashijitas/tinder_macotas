@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../controllers/auth_controller.dart';
-import '../dashboard/adopter_main_screen.dart';
-import '../dashboard/shelter_main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -72,7 +71,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Selecciona tu perfil en la plataforma:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.textDark),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppTheme.textDark,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -136,7 +139,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               if (email.isEmpty || !email.contains('@')) {
                                 messenger.showSnackBar(
                                   const SnackBar(
-                                    content: Text('Ingresa un correo electrónico válido'),
+                                    content: Text(
+                                      'Ingresa un correo electrónico válido',
+                                    ),
                                   ),
                                 );
                                 return;
@@ -145,6 +150,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               if (!mounted) return;
                               if (ok) {
                                 setState(() => _codeSent = true);
+                              } else {
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      authController.errorMessage ??
+                                          'No se pudo enviar el código. Intenta nuevamente.',
+                                    ),
+                                  ),
+                                );
                               }
                             },
                       child: authController.isLoading
@@ -183,27 +197,33 @@ class _LoginScreenState extends State<LoginScreen> {
                           : () async {
                               final code = _otpController.text.trim();
                               final messenger = ScaffoldMessenger.of(context);
-                              final navigator = Navigator.of(context);
                               if (code.length != 6) {
                                 messenger.showSnackBar(
                                   const SnackBar(
-                                    content: Text('El código debe tener 6 dígitos'),
+                                    content: Text(
+                                      'El código debe tener 6 dígitos',
+                                    ),
                                   ),
                                 );
                                 return;
                               }
-                              final ok = await authController.verifyOtp(code);
+                              final email = _emailController.text.trim();
+                              final ok = await authController.verifyOtp(
+                                email,
+                                code,
+                              );
                               if (!mounted) return;
-                              if (ok) {
-                                final isAdopter = authController.userRole == 'adopter';
-                                navigator.pushReplacement(
-                                  MaterialPageRoute(
-                                    builder: (_) => isAdopter
-                                        ? const AdopterMainScreen()
-                                        : const ShelterMainScreen(),
+                              if (!ok) {
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      authController.errorMessage ??
+                                          'Código inválido o expirado',
+                                    ),
                                   ),
                                 );
                               }
+                              // Si fue exitoso, AuthGate redirige automáticamente al dashboard correspondiente.
                             },
                       child: authController.isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
@@ -216,24 +236,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text('Cambiar correo electrónico'),
                   ),
                 ],
-
-                const SizedBox(height: 20),
-                // Botón acceso rápido demo
-                TextButton.icon(
-                  icon: const Icon(Icons.flash_on, size: 18),
-                  label: Text('Entrar como Demo (${authController.roleTitle})'),
-                  onPressed: () {
-                    final isAdopter = authController.userRole == 'adopter';
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => isAdopter
-                            ? const AdopterMainScreen()
-                            : const ShelterMainScreen(),
-                      ),
-                    );
-                  },
-                ),
               ],
             ),
           ),
@@ -259,7 +261,9 @@ class _LoginScreenState extends State<LoginScreen> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.12) : Colors.white,
+            color: isSelected
+                ? AppTheme.primaryColor.withValues(alpha: 0.12)
+                : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected ? AppTheme.primaryColor : Colors.grey[300]!,
@@ -283,7 +287,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                    color: isSelected ? AppTheme.primaryColor : AppTheme.textDark,
+                    color: isSelected
+                        ? AppTheme.primaryColor
+                        : AppTheme.textDark,
                   ),
                 ),
               ),
@@ -295,7 +301,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   maxLines: 1,
                   style: TextStyle(
                     fontSize: 10,
-                    color: isSelected ? AppTheme.primaryColor : AppTheme.textMuted,
+                    color: isSelected
+                        ? AppTheme.primaryColor
+                        : AppTheme.textMuted,
                   ),
                 ),
               ),

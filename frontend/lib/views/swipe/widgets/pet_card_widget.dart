@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_theme.dart';
 import '../../../models/pet_model.dart';
 import '../../../models/adopter_form_model.dart';
@@ -58,7 +59,9 @@ class PetCardWidget extends StatelessWidget {
                 return Container(
                   color: Colors.grey[200],
                   child: const Center(
-                    child: CircularProgressIndicator(color: AppTheme.primaryColor),
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryColor,
+                    ),
                   ),
                 );
               },
@@ -89,7 +92,10 @@ class PetCardWidget extends StatelessWidget {
               top: 16,
               left: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: isIndividual
                       ? Colors.orange[800]!.withValues(alpha: 0.88)
@@ -122,7 +128,10 @@ class PetCardWidget extends StatelessWidget {
               top: 16,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: matchResult.percentage >= 85
                       ? AppTheme.successGreen.withValues(alpha: 0.9)
@@ -137,7 +146,11 @@ class PetCardWidget extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.auto_awesome, color: Colors.white, size: 14),
+                    const Icon(
+                      Icons.auto_awesome,
+                      color: Colors.white,
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       matchResult.matchBadgeText,
@@ -199,7 +212,11 @@ class PetCardWidget extends StatelessWidget {
                       ),
                       IconButton(
                         onPressed: onInfoTap,
-                        icon: const Icon(Icons.info_outline, color: Colors.white, size: 28),
+                        icon: const Icon(
+                          Icons.info_outline,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                     ],
                   ),
@@ -209,11 +226,18 @@ class PetCardWidget extends StatelessWidget {
                   // Distancia estimada
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 14, color: Colors.white70),
+                      const Icon(
+                        Icons.location_on,
+                        size: 14,
+                        color: Colors.white70,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'A $distanceKm km de tu ubicación',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -231,15 +255,25 @@ class PetCardWidget extends StatelessWidget {
                         highlight: true,
                       ),
                       _buildBadge(
-                        pet.isNeutered ? Icons.check_circle_outline : Icons.schedule,
+                        pet.isNeutered
+                            ? Icons.check_circle_outline
+                            : Icons.schedule,
                         pet.reproductiveBadgeText,
                       ),
                       if (pet.vaccinesApplied.isNotEmpty)
-                        _buildBadge(Icons.medical_services_outlined, '${pet.vaccinesApplied.length} vacunas'),
+                        _buildBadge(
+                          Icons.medical_services_outlined,
+                          '${pet.vaccinesApplied.length} vacunas',
+                        ),
                       if (pet.goodWithKids)
                         _buildBadge(Icons.child_care, 'Apto niños'),
                       if (pet.houseTrained)
-                        _buildBadge(Icons.clean_hands_outlined, pet.species == 'cat' ? 'Usa arenero' : 'Paseos limpios'),
+                        _buildBadge(
+                          Icons.clean_hands_outlined,
+                          pet.species == 'cat'
+                              ? 'Usa arenero'
+                              : 'Paseos limpios',
+                        ),
                     ],
                   ),
 
@@ -250,10 +284,7 @@ class PetCardWidget extends StatelessWidget {
                     pet.story,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                    ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ],
               ),

@@ -6,3 +6,4 @@ export const authRouter = Router();
 
 authRouter.post('/otp', AuthController.requestOtp);
 authRouter.get('/profile', authMiddleware, AuthController.getProfile);
+authRouter.post('/profile', authMiddleware, AuthController.upsertProfile);

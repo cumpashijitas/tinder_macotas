@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "description": "API REST MVC para la plataforma de adopción de mascotas PetMatch conectada a Supabase",
   "main": "dist/app.js",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
-    "start": "node dist/app.js"
+    "start": "node dist/app.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
@@ -19,7 +21,10 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.9",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.2.2",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^5.0.1"
   }
 }

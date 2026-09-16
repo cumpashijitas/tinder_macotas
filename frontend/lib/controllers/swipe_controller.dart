@@ -1,219 +1,186 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+
+import '../core/services/api_service.dart';
 import '../models/pet_model.dart';
 
 class SwipeController extends ChangeNotifier {
+  final ApiService _api;
   final CardSwiperController cardSwiperController = CardSwiperController();
+
+  SwipeController({ApiService? apiService}) : _api = apiService ?? ApiService();
+
   List<PetModel> _pets = [];
+  List<PetModel> _inventory = [];
   bool _isLoading = false;
   String? _lastSwipeFeedback;
+  String? _errorMessage;
 
   List<PetModel> get pets => _pets;
+  List<PetModel> get inventory => _inventory;
   bool get isLoading => _isLoading;
   String? get lastSwipeFeedback => _lastSwipeFeedback;
+  String? get errorMessage => _errorMessage;
 
-  SwipeController() {
-    loadSamplePets();
-  }
-
-  void loadSamplePets() {
+  /// Carga el feed de mascotas disponibles (excluye las ya swipeadas por el adoptante)
+  Future<void> loadFeed({String? species, String? publisherType}) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
-    // Mascotas demo: Refugios institucionales y particulares con camadas
-    _pets = [
-      PetModel(
-        id: '1',
-        shelterId: 'shelter_1',
-        publisherType: 'shelter',
-        name: 'Rocky',
-        species: 'dog',
-        breed: 'Mestizo Labrador',
-        ageYears: 2.0,
-        gender: 'male',
-        size: 'medium',
-        energyLevel: 3,
-        origin: 'street_rescue',
-        isLitter: false,
-        weaningCompleted: true,
-        isVaccinated: true,
-        vaccinesApplied: ['Antirrábica', 'Séxtuple Canina'],
-        dewormedInternal: true,
-        dewormedExternal: true,
-        hasMicrochip: true,
-        isNeutered: true,
-        reproductiveStatus: 'neutered',
-        houseTrained: true,
-        goodWithDogs: true,
-        goodWithCats: false,
-        goodWithKids: true,
-        requiresYard: false,
-        stormAnxiety: 1,
-        requiresAdoptionContract: true,
-        requiresHomeCheck: false,
-        requiresFollowupPhotos: true,
-        deliveryType: 'to_be_agreed',
-        story: 'Rocky fue rescatado cerca de una plaza. Es muy alegre, le encanta jugar a la pelota y aprende trucos rápidamente. Esterilizado y con libreta sanitaria completa.',
-        photos: [
-          'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=800&q=80',
-          'https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?auto=format&fit=crop&w=800&q=80',
-        ],
-        status: 'available',
-      ),
-      PetModel(
-        id: '2',
-        shelterId: 'individual_1',
-        publisherType: 'individual_rescuer',
-        name: 'Simba',
-        species: 'dog',
-        breed: 'Cachorro Mestizo Golden',
-        ageYears: 0.25, // 3 meses
-        gender: 'male',
-        size: 'medium',
-        energyLevel: 4,
-        origin: 'home_litter',
-        isLitter: true,
-        weaningCompleted: true, // Superó los 60 días
-        isVaccinated: true,
-        vaccinesApplied: ['Pupivac (1ra dosis Séxtuple)'],
-        dewormedInternal: true,
-        dewormedExternal: true,
-        hasMicrochip: false,
-        isNeutered: false,
-        reproductiveStatus: 'requires_spay_agreement',
-        houseTrained: false,
-        goodWithDogs: true,
-        goodWithCats: true,
-        goodWithKids: true,
-        requiresYard: true,
-        stormAnxiety: 2,
-        requiresAdoptionContract: true,
-        requiresHomeCheck: false,
-        requiresFollowupPhotos: true,
-        deliveryType: 'home_delivery',
-        story: 'Nació en casa tras rescatar a su mamá embarazada. Cumplió más de 60 días de destete con la madre, come alimento cachorro y buscamos familia con patio para él.',
-        photos: [
-          'https://images.unsplash.com/photo-1591160690555-5debfba289f0?auto=format&fit=crop&w=800&q=80',
-        ],
-        status: 'available',
-      ),
-      PetModel(
-        id: '3',
-        shelterId: 'shelter_1',
-        publisherType: 'shelter',
-        name: 'Luna',
-        species: 'cat',
-        breed: 'Común Europeo',
-        ageYears: 1.2,
-        gender: 'female',
-        size: 'small',
-        energyLevel: 2,
-        origin: 'street_rescue',
-        isLitter: false,
-        weaningCompleted: true,
-        isVaccinated: true,
-        vaccinesApplied: ['Antirrábica', 'Triple Felina'],
-        dewormedInternal: true,
-        dewormedExternal: true,
-        hasMicrochip: true,
-        isNeutered: true,
-        reproductiveStatus: 'spayed',
-        houseTrained: true,
-        goodWithDogs: false,
-        goodWithCats: true,
-        goodWithKids: true,
-        requiresYard: false,
-        stormAnxiety: 1,
-        requiresAdoptionContract: true,
-        requiresHomeCheck: true,
-        requiresFollowupPhotos: true,
-        deliveryType: 'pickup_at_shelter',
-        story: 'Luna es una gatita dulce y tranquila que adora dormir en el regazo. Esterilizada, usa arenero y es ideal para departamentos con red de seguridad.',
-        photos: [
-          'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80',
-        ],
-        status: 'available',
-      ),
-      PetModel(
-        id: '4',
-        shelterId: 'individual_2',
-        publisherType: 'individual_rescuer',
-        name: 'Mía & Hermanitos (Camada)',
-        species: 'cat',
-        breed: 'Gatitos Siameses Mix',
-        ageYears: 0.2, // ~2.5 meses
-        gender: 'female',
-        size: 'small',
-        energyLevel: 4,
-        origin: 'home_litter',
-        isLitter: true,
-        weaningCompleted: true,
-        isVaccinated: true,
-        vaccinesApplied: ['1ra Triple Felina'],
-        dewormedInternal: true,
-        dewormedExternal: true,
-        hasMicrochip: false,
-        isNeutered: false,
-        reproductiveStatus: 'requires_spay_agreement',
-        houseTrained: true,
-        goodWithDogs: true,
-        goodWithCats: true,
-        goodWithKids: true,
-        requiresYard: false,
-        stormAnxiety: 1,
-        requiresAdoptionContract: true,
-        requiresHomeCheck: false,
-        requiresFollowupPhotos: true,
-        deliveryType: 'to_be_agreed',
-        story: 'Camada nacida en casa. Ya comen solos, aprendieron a usar el arenero perfectamente y se entregan con compromiso de castración a los 6 meses.',
-        photos: [
-          'https://images.unsplash.com/photo-1533738363-b7f9aef128ce?auto=format&fit=crop&w=800&q=80',
-        ],
-        status: 'available',
-      ),
-    ];
+    try {
+      final params = <String>[];
+      if (species != null) {
+        params.add('species=${Uri.encodeQueryComponent(species)}');
+      }
+      if (publisherType != null) {
+        params.add('publisher_type=${Uri.encodeQueryComponent(publisherType)}');
+      }
+      final query = params.isNotEmpty ? '?${params.join('&')}' : '';
+
+      final data = await _api.get('/pets/feed$query');
+      _pets = (data as List<dynamic>)
+          .map((e) => PetModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _errorMessage = e.toString();
+      _pets = [];
+    }
 
     _isLoading = false;
     notifyListeners();
   }
 
-  void addPet(PetModel pet) {
-    _pets.insert(0, pet);
+  /// Inventario completo del publicador actual (incluye pausadas/adoptadas/pendientes de moderación)
+  Future<void> loadInventory() async {
+    try {
+      final data = await _api.get('/pets/inventory');
+      _inventory = (data as List<dynamic>)
+          .map((e) => PetModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      _errorMessage = e.toString();
+      _inventory = [];
+    }
     notifyListeners();
   }
 
-  void updatePetStatus(PetModel pet, String newStatus) {
-    pet.status = newStatus;
-    notifyListeners();
-  }
-
-  bool handleSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) {
-    if (previousIndex < _pets.length) {
-      final pet = _pets[previousIndex];
-      final dador = pet.publisherType == 'individual_rescuer' ? 'la familia dante' : 'el refugio';
-      if (direction == CardSwiperDirection.right) {
-        _lastSwipeFeedback = '¡Postulación enviada por ${pet.name}! $dador revisará tu formulario.';
-      } else if (direction == CardSwiperDirection.top) {
-        _lastSwipeFeedback = '⭐ ¡Super-Adopción enviada por ${pet.name}!';
-      } else {
-        _lastSwipeFeedback = null;
-      }
+  /// Publica una mascota nueva (refugio o particular con camada)
+  Future<PetModel?> publishPet(Map<String, dynamic> payload) async {
+    try {
+      final data = await _api.post('/pets', payload);
+      final pet = PetModel.fromJson(data as Map<String, dynamic>);
+      _inventory.insert(0, pet);
       notifyListeners();
+      return pet;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
+  /// Solicitud de reubicación responsable: queda pendiente de moderación,
+  /// no se agrega al feed hasta que un admin la apruebe.
+  Future<PetModel?> submitRelocation(Map<String, dynamic> payload) async {
+    try {
+      final data = await _api.post('/pets/relocate', payload);
+      return PetModel.fromJson(data as Map<String, dynamic>);
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> updatePetStatus(PetModel pet, String newStatus) async {
+    try {
+      await _api.patch('/pets/${pet.id}/status', {'status': newStatus});
+      pet.status = newStatus;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Postula directamente a una mascota (swipe a la derecha) fuera del deck,
+  /// por ejemplo desde la ficha de detalle en la vista de cuadrícula.
+  Future<bool> applyToAdopt(PetModel pet) async {
+    try {
+      final data = await _api.post('/swipes', {
+        'pet_id': pet.id,
+        'direction': 'right',
+      });
+      final matchCreated =
+          (data as Map<String, dynamic>)['matchCreated'] == true;
+      if (matchCreated) {
+        _lastSwipeFeedback =
+            '¡Postulación enviada por ${pet.name}! El publicador revisará tu formulario.';
+        notifyListeners();
+      }
+      return matchCreated;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Callback síncrono requerido por CardSwiper: dispara el registro del swipe
+  /// en el backend en segundo plano y deja que la animación continúe.
+  bool handleSwipe(
+    int previousIndex,
+    int? currentIndex,
+    CardSwiperDirection direction,
+  ) {
+    if (previousIndex < _pets.length) {
+      _recordSwipe(_pets[previousIndex], direction);
     }
     return true;
   }
 
-  void swipeLeft() {
-    cardSwiperController.swipe(CardSwiperDirection.left);
+  Future<void> _recordSwipe(PetModel pet, CardSwiperDirection direction) async {
+    String? apiDirection;
+    if (direction == CardSwiperDirection.right) {
+      apiDirection = 'right';
+    } else if (direction == CardSwiperDirection.top) {
+      apiDirection = 'superlike';
+    } else if (direction == CardSwiperDirection.left) {
+      apiDirection = 'left';
+    }
+
+    if (apiDirection == null) return;
+
+    try {
+      final data = await _api.post('/swipes', {
+        'pet_id': pet.id,
+        'direction': apiDirection,
+      });
+      final matchCreated =
+          (data as Map<String, dynamic>)['matchCreated'] == true;
+
+      if (matchCreated && apiDirection == 'right') {
+        _lastSwipeFeedback =
+            '¡Postulación enviada por ${pet.name}! El publicador revisará tu formulario.';
+      } else if (matchCreated && apiDirection == 'superlike') {
+        _lastSwipeFeedback = '⭐ ¡Super-Adopción enviada por ${pet.name}!';
+      } else {
+        _lastSwipeFeedback = null;
+      }
+    } catch (e) {
+      _lastSwipeFeedback = null;
+      _errorMessage = e.toString();
+    }
+
+    notifyListeners();
   }
 
-  void swipeRight() {
-    cardSwiperController.swipe(CardSwiperDirection.right);
-  }
-
-  void swipeTop() {
-    cardSwiperController.swipe(CardSwiperDirection.top);
-  }
+  void swipeLeft() => cardSwiperController.swipe(CardSwiperDirection.left);
+  void swipeRight() => cardSwiperController.swipe(CardSwiperDirection.right);
+  void swipeTop() => cardSwiperController.swipe(CardSwiperDirection.top);
 
   @override
   void dispose() {

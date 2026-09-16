@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color primaryColor = Color(0xFFFF6584); // Coral cálido / Tinder pet
+  static const Color primaryColor = Color(
+    0xFFFF6584,
+  ); // Coral cálido / Tinder pet
   static const Color secondaryColor = Color(0xFF6C63FF); // Púrpura amigable
   static const Color backgroundColor = Color(0xFFF9F9FB);
   static const Color surfaceColor = Colors.white;
@@ -43,10 +45,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
     );

@@ -46,6 +46,10 @@ export interface PetRecord {
   photos: string[];
   status: 'available' | 'paused' | 'in_process' | 'adopted';
   relocation_reason?: string | null;
+  moderation_status: 'pending' | 'approved' | 'rejected';
+  moderation_notes?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -87,6 +91,7 @@ export class PetModel {
       .from('pets')
       .select('*')
       .eq('status', 'available')
+      .eq('moderation_status', 'approved')
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -145,5 +150,39 @@ export class PetModel {
 
     if (error) throw error;
     return (data || []) as PetRecord[];
+  }
+
+  /**
+   * Mascotas pendientes de moderación (ej. solicitudes de reubicación responsable)
+   */
+  static async findPendingModeration(): Promise<PetRecord[]> {
+    const { data, error } = await supabaseAdmin
+      .from('pets')
+      .select('*')
+      .eq('moderation_status', 'pending')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return (data || []) as PetRecord[];
+  }
+
+  static async moderate(
+    id: string,
+    moderationStatus: 'approved' | 'rejected',
+    moderationNotes?: string | null
+  ): Promise<PetRecord> {
+    const { data, error } = await supabaseAdmin
+      .from('pets')
+      .update({
+        moderation_status: moderationStatus,
+        moderation_notes: moderationNotes || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as PetRecord;
   }
 }

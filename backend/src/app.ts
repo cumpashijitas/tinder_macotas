@@ -6,6 +6,10 @@ import { authRouter } from './routes/auth.routes.js';
 import { adopterRouter } from './routes/adopter.routes.js';
 import { petRouter } from './routes/pet.routes.js';
 import { swipeRouter } from './routes/swipe.routes.js';
+import { messageRouter } from './routes/message.routes.js';
+import { visitRouter, visitStatusRouter } from './routes/visit.routes.js';
+import { contractRouter } from './routes/contract.routes.js';
+import { storyRouter } from './routes/story.routes.js';
 
 const app = express();
 
@@ -27,6 +31,11 @@ app.use('/api/auth', authRouter);
 app.use('/api/adopter', adopterRouter);
 app.use('/api/pets', petRouter);
 app.use('/api/swipes', swipeRouter);
+app.use('/api/matches', messageRouter);
+app.use('/api/matches', visitRouter);
+app.use('/api/visits', visitStatusRouter);
+app.use('/api/contracts', contractRouter);
+app.use('/api/stories', storyRouter);
 
 // Manejo de rutas inexistentes (404)
 app.use((_req, res) => {

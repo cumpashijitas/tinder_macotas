@@ -1,4 +1,5 @@
 import 'pet_model.dart';
+import 'adopter_form_model.dart';
 
 class MatchModel {
   final String id;
@@ -8,6 +9,8 @@ class MatchModel {
   final String status;
   final String? shelterComments;
   final PetModel? pet;
+  final String? adopterName;
+  final AdopterFormModel? adopterForm;
   final DateTime createdAt;
 
   MatchModel({
@@ -18,6 +21,8 @@ class MatchModel {
     required this.status,
     this.shelterComments,
     this.pet,
+    this.adopterName,
+    this.adopterForm,
     required this.createdAt,
   });
 
@@ -29,12 +34,27 @@ class MatchModel {
       shelterId: json['shelter_id'] as String? ?? '',
       status: json['status'] as String? ?? 'pending_review',
       shelterComments: json['shelter_comments'] as String?,
-      pet: json['pets'] != null ? PetModel.fromJson(json['pets'] as Map<String, dynamic>) : null,
+      pet: json['pets'] != null
+          ? PetModel.fromJson(json['pets'] as Map<String, dynamic>)
+          : null,
+      adopterName: json['adopter'] != null
+          ? (json['adopter'] as Map<String, dynamic>)['full_name'] as String?
+          : null,
+      adopterForm: json['adopter_form'] != null
+          ? AdopterFormModel.fromJson(
+              json['adopter_form'] as Map<String, dynamic>,
+            )
+          : null,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
     );
   }
+
+  bool get isChatEnabled =>
+      status == 'approved_for_chat' ||
+      status == 'interview_scheduled' ||
+      status == 'adoption_finalized';
 
   String get statusBadgeText {
     switch (status) {

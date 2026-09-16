@@ -1,28 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../../core/theme/app_theme.dart';
 import '../../../models/pet_model.dart';
-import '../../../models/adopter_form_model.dart';
+import '../../../controllers/adopter_form_controller.dart';
+import '../../../controllers/swipe_controller.dart';
 import '../../../services/compatibility_service.dart';
 import '../../pets/widgets/health_booklet_modal.dart';
-import '../../contract/adoption_contract_screen.dart';
-import '../../chat/chat_screen.dart';
 
 class PetDetailSheet extends StatelessWidget {
   final PetModel pet;
   final VoidCallback? onApplyAdoption;
 
-  const PetDetailSheet({
-    super.key,
-    required this.pet,
-    this.onApplyAdoption,
-  });
+  const PetDetailSheet({super.key, required this.pet, this.onApplyAdoption});
 
-  static Future<void> show(BuildContext context, PetModel pet, {VoidCallback? onApplyAdoption}) {
+  static Future<void> show(
+    BuildContext context,
+    PetModel pet, {
+    VoidCallback? onApplyAdoption,
+  }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => PetDetailSheet(pet: pet, onApplyAdoption: onApplyAdoption),
+      builder: (_) =>
+          PetDetailSheet(pet: pet, onApplyAdoption: onApplyAdoption),
     );
   }
 
@@ -30,8 +32,9 @@ class PetDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final isIndividual = pet.publisherType == 'individual_rescuer';
     final isRelocated = pet.isRelocated;
+    final adopterForm = Provider.of<AdopterFormController>(context).form;
     final matchResult = CompatibilityService.calculateMatch(
-      adopter: AdopterFormModel(),
+      adopter: adopterForm,
       pet: pet,
     );
 
@@ -64,13 +67,15 @@ class PetDetailSheet extends StatelessWidget {
                   child: AspectRatio(
                     aspectRatio: 16 / 10,
                     child: Image.network(
-                      pet.photos.isNotEmpty
-                          ? pet.photos.first
-                          : 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80',
+                      pet.photos.isNotEmpty ? pet.photos.first : 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80',
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) => Container(
                         color: Colors.grey[200],
-                        child: const Icon(Icons.pets, size: 50, color: Colors.grey),
+                        child: const Icon(
+                          Icons.pets,
+                          size: 50,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ),
@@ -91,33 +96,49 @@ class PetDetailSheet extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   pet.name,
-                                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.textDark,
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Icon(
-                                pet.gender == 'female' ? Icons.female : Icons.male,
-                                color: pet.gender == 'female' ? Colors.pink : Colors.blue,
+                                pet.gender == 'female'
+                                    ? Icons.female
+                                    : Icons.male,
+                                color: pet.gender == 'female'
+                                    ? Colors.pink
+                                    : Colors.blue,
                                 size: 22,
                               ),
                             ],
                           ),
                           Text(
                             '${pet.breed} • ${pet.ageFormatted} (${pet.ageStageLabel})',
-                            style: const TextStyle(color: AppTheme.textMuted, fontSize: 14),
+                            style: const TextStyle(
+                              color: AppTheme.textMuted,
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: isRelocated
                             ? Colors.red.withValues(alpha: 0.12)
                             : (isIndividual
-                                ? Colors.orange.withValues(alpha: 0.15)
-                                : AppTheme.primaryColor.withValues(alpha: 0.15)),
+                                  ? Colors.orange.withValues(alpha: 0.15)
+                                  : AppTheme.primaryColor.withValues(
+                                      alpha: 0.15,
+                                    )),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
@@ -126,11 +147,15 @@ class PetDetailSheet extends StatelessWidget {
                           Icon(
                             isRelocated
                                 ? Icons.warning_amber_rounded
-                                : (isIndividual ? Icons.volunteer_activism : Icons.verified),
+                                : (isIndividual
+                                      ? Icons.volunteer_activism
+                                      : Icons.verified),
                             size: 14,
                             color: isRelocated
                                 ? Colors.red[800]
-                                : (isIndividual ? Colors.orange[800] : AppTheme.primaryColor),
+                                : (isIndividual
+                                      ? Colors.orange[800]
+                                      : AppTheme.primaryColor),
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -138,7 +163,9 @@ class PetDetailSheet extends StatelessWidget {
                             style: TextStyle(
                               color: isRelocated
                                   ? Colors.red[800]
-                                  : (isIndividual ? Colors.orange[800] : AppTheme.primaryColor),
+                                  : (isIndividual
+                                        ? Colors.orange[800]
+                                        : AppTheme.primaryColor),
                               fontWeight: FontWeight.bold,
                               fontSize: 11,
                             ),
@@ -162,7 +189,11 @@ class PetDetailSheet extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.info_outline, color: Colors.amber, size: 20),
+                        const Icon(
+                          Icons.info_outline,
+                          color: Colors.amber,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Column(
@@ -170,11 +201,18 @@ class PetDetailSheet extends StatelessWidget {
                             children: [
                               const Text(
                                 'Motivo de Reubicación Excepcional:',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.brown),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: Colors.brown,
+                                ),
                               ),
                               Text(
                                 pet.relocationReason!,
-                                style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black87,
+                                ),
                               ),
                             ],
                           ),
@@ -202,17 +240,28 @@ class PetDetailSheet extends StatelessWidget {
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.auto_awesome, color: AppTheme.successGreen, size: 18),
+                              Icon(
+                                Icons.auto_awesome,
+                                color: AppTheme.successGreen,
+                                size: 18,
+                              ),
                               SizedBox(width: 6),
                               Text(
                                 'Índice de Compatibilidad',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
                               ),
                             ],
                           ),
                           Text(
                             '${matchResult.percentage}% Match',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green[900], fontSize: 15),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green[900],
+                              fontSize: 15,
+                            ),
                           ),
                         ],
                       ),
@@ -223,9 +272,18 @@ class PetDetailSheet extends StatelessWidget {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(Icons.check, size: 14, color: AppTheme.successGreen),
+                              const Icon(
+                                Icons.check,
+                                size: 14,
+                                color: AppTheme.successGreen,
+                              ),
                               const SizedBox(width: 6),
-                              Expanded(child: Text(pos, style: const TextStyle(fontSize: 12))),
+                              Expanded(
+                                child: Text(
+                                  pos,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -236,30 +294,17 @@ class PetDetailSheet extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // Botones rápidos: Libreta Sanitaria y Contrato
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.menu_book, size: 18),
-                        label: const Text('Libreta Sanitaria', style: TextStyle(fontSize: 12)),
-                        onPressed: () => HealthBookletModal.show(context, pet),
-                      ),
+                // Libreta Sanitaria (el contrato de adopción se genera recién tras el match)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.menu_book, size: 18),
+                    label: const Text(
+                      'Libreta Sanitaria',
+                      style: TextStyle(fontSize: 12),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.description, size: 18),
-                        label: const Text('Ver Contrato', style: TextStyle(fontSize: 12)),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => AdoptionContractScreen(pet: pet)),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                    onPressed: () => HealthBookletModal.show(context, pet),
+                  ),
                 ),
 
                 const Divider(height: 28),
@@ -267,12 +312,20 @@ class PetDetailSheet extends StatelessWidget {
                 // Historia y Personalidad
                 const Text(
                   'Historia y Personalidad',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   pet.story,
-                  style: const TextStyle(fontSize: 13, height: 1.4, color: Colors.black87),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: Colors.black87,
+                  ),
                 ),
 
                 const SizedBox(height: 16),
@@ -280,7 +333,11 @@ class PetDetailSheet extends StatelessWidget {
                 // Ficha Clínica y Reproductiva
                 const Text(
                   'Ficha Clínica y Reproductiva',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textDark,
+                  ),
                 ),
                 const SizedBox(height: 8),
 
@@ -292,7 +349,9 @@ class PetDetailSheet extends StatelessWidget {
                 _buildDetailRow(
                   Icons.health_and_safety_outlined,
                   'Desparasitación',
-                  (pet.dewormedInternal && pet.dewormedExternal) ? 'Al día (Interna y Externa)' : 'Parcial',
+                  (pet.dewormedInternal && pet.dewormedExternal)
+                      ? 'Al día (Interna y Externa)'
+                      : 'Parcial',
                 ),
                 _buildDetailRow(
                   Icons.qr_code_2_outlined,
@@ -311,18 +370,40 @@ class PetDetailSheet extends StatelessWidget {
                 // Hábitos y Convivencia
                 const Text(
                   'Convivencia e Higiene',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textDark,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 _buildDetailBoolean(
                   Icons.clean_hands_outlined,
-                  pet.species == 'cat' ? 'Usa arenero' : 'Hace necesidades afuera en paseos',
+                  pet.species == 'cat'
+                      ? 'Usa arenero'
+                      : 'Hace necesidades afuera en paseos',
                   pet.houseTrained,
                 ),
-                _buildDetailBoolean(Icons.pets, 'Sociable con otros perros', pet.goodWithDogs),
-                _buildDetailBoolean(Icons.pets, 'Sociable con gatos', pet.goodWithCats),
-                _buildDetailBoolean(Icons.child_care, 'Sociable con niños', pet.goodWithKids),
-                _buildDetailBoolean(Icons.home_outlined, 'Requiere patio obligatorio', pet.requiresYard),
+                _buildDetailBoolean(
+                  Icons.pets,
+                  'Sociable con otros perros',
+                  pet.goodWithDogs,
+                ),
+                _buildDetailBoolean(
+                  Icons.pets,
+                  'Sociable con gatos',
+                  pet.goodWithCats,
+                ),
+                _buildDetailBoolean(
+                  Icons.child_care,
+                  'Sociable con niños',
+                  pet.goodWithKids,
+                ),
+                _buildDetailBoolean(
+                  Icons.home_outlined,
+                  'Requiere patio obligatorio',
+                  pet.requiresYard,
+                ),
 
                 const SizedBox(height: 24),
               ],
@@ -355,23 +436,39 @@ class PetDetailSheet extends StatelessWidget {
                         icon: const Icon(Icons.favorite, color: Colors.white),
                         label: Text(
                           'Postularme para Adoptar a ${pet.name}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
                         ),
-                        onPressed: () {
-                          Navigator.pop(context);
+                        onPressed: () async {
                           if (onApplyAdoption != null) {
+                            Navigator.pop(context);
                             onApplyAdoption!();
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChatScreen(
-                                  pet: pet,
-                                  shelterName: pet.publisherBadgeText,
-                                ),
-                              ),
-                            );
+                            return;
                           }
+                          final swipeController = Provider.of<SwipeController>(
+                            context,
+                            listen: false,
+                          );
+                          final messenger = ScaffoldMessenger.of(context);
+                          Navigator.pop(context);
+                          final matched = await swipeController.applyToAdopt(
+                            pet,
+                          );
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                matched
+                                    ? '¡Postulación enviada por ${pet.name}! El publicador revisará tu formulario.'
+                                    : 'No se pudo enviar la postulación. Intenta nuevamente.',
+                              ),
+                              backgroundColor: matched
+                                  ? AppTheme.successGreen
+                                  : AppTheme.rejectRed,
+                            ),
+                          );
                         },
                       ),
                     ),

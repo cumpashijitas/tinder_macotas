@@ -4,7 +4,8 @@ class AppConstants {
 
   // Configuración de Supabase Cloud (proyecto "t adopcion")
   static const String supabaseUrl = 'https://zvsvsopywivrfoyvkinj.supabase.co';
-  static const String supabaseAnonKey = 'sb_publishable_tVIM8vkRpToymIgSwnKaww_9Y_k9jTi';
+  static const String supabaseAnonKey =
+      'sb_publishable_tVIM8vkRpToymIgSwnKaww_9Y_k9jTi';
 
   // Almacenamiento local keys
   static const String tokenKey = 'petmatch_auth_token';

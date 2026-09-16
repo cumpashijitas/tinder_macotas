@@ -11,7 +11,8 @@ class PetModel {
   final int energyLevel; // 1 a 5
 
   // Origen y Camadas
-  final String origin; // 'home_litter' | 'street_rescue' | 'shelter_born' | 'relinquished'
+  final String
+  origin; // 'home_litter' | 'street_rescue' | 'shelter_born' | 'relinquished'
   final bool isLitter;
   final bool weaningCompleted;
 
@@ -43,6 +44,8 @@ class PetModel {
   final List<String> photos;
   String status; // 'available' | 'paused' | 'in_process' | 'adopted'
   final String? relocationReason;
+  final String moderationStatus; // 'pending' | 'approved' | 'rejected'
+  final String? moderationNotes;
 
   PetModel({
     required this.id,
@@ -80,6 +83,8 @@ class PetModel {
     required this.photos,
     required this.status,
     this.relocationReason,
+    this.moderationStatus = 'approved',
+    this.moderationNotes,
   });
 
   factory PetModel.fromJson(Map<String, dynamic> json) {
@@ -90,7 +95,9 @@ class PetModel {
       name: json['name'] as String? ?? 'Sin nombre',
       species: json['species'] as String? ?? 'dog',
       breed: json['breed'] as String? ?? 'Mestizo',
-      ageYears: (json['age_years'] is num) ? (json['age_years'] as num).toDouble() : 1.0,
+      ageYears: (json['age_years'] is num)
+          ? (json['age_years'] as num).toDouble()
+          : 1.0,
       gender: json['gender'] as String? ?? 'male',
       size: json['size'] as String? ?? 'medium',
       energyLevel: json['energy_level'] as int? ?? 3,
@@ -100,12 +107,18 @@ class PetModel {
       weaningCompleted: json['weaning_completed'] as bool? ?? true,
 
       isVaccinated: json['is_vaccinated'] as bool? ?? false,
-      vaccinesApplied: (json['vaccines_applied'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      vaccinesApplied:
+          (json['vaccines_applied'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
       dewormedInternal: json['dewormed_internal'] as bool? ?? true,
       dewormedExternal: json['dewormed_external'] as bool? ?? true,
       hasMicrochip: json['has_microchip'] as bool? ?? false,
       isNeutered: json['is_neutered'] as bool? ?? false,
-      reproductiveStatus: json['reproductive_status'] as String? ?? (json['is_neutered'] == true ? 'neutered' : 'intact'),
+      reproductiveStatus:
+          json['reproductive_status'] as String? ??
+          (json['is_neutered'] == true ? 'neutered' : 'intact'),
 
       houseTrained: json['house_trained'] as bool? ?? true,
       goodWithDogs: json['good_with_dogs'] as bool? ?? true,
@@ -116,14 +129,21 @@ class PetModel {
       specialNeeds: json['special_needs'] as String?,
       story: json['story'] as String? ?? '',
 
-      requiresAdoptionContract: json['requires_adoption_contract'] as bool? ?? true,
+      requiresAdoptionContract:
+          json['requires_adoption_contract'] as bool? ?? true,
       requiresHomeCheck: json['requires_home_check'] as bool? ?? false,
       requiresFollowupPhotos: json['requires_followup_photos'] as bool? ?? true,
       deliveryType: json['delivery_type'] as String? ?? 'to_be_agreed',
 
-      photos: (json['photos'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      photos:
+          (json['photos'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
       status: json['status'] as String? ?? 'available',
       relocationReason: json['relocation_reason'] as String?,
+      moderationStatus: json['moderation_status'] as String? ?? 'approved',
+      moderationNotes: json['moderation_notes'] as String?,
     );
   }
 

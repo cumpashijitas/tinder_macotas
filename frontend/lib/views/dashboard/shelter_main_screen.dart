@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../controllers/auth_controller.dart';
+import '../../controllers/matches_controller.dart';
 import '../../controllers/swipe_controller.dart';
 import '../shelter/shelter_inventory_screen.dart';
 import '../shelter/shelter_kanban_screen.dart';
 import '../chat/chat_screen.dart';
-import '../auth/login_screen.dart';
 
 class ShelterMainScreen extends StatefulWidget {
   const ShelterMainScreen({super.key});
@@ -37,12 +38,18 @@ class _ShelterMainScreenState extends State<ShelterMainScreen> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.inventory_2_outlined),
-            selectedIcon: Icon(Icons.inventory_2, color: AppTheme.secondaryColor),
+            selectedIcon: Icon(
+              Icons.inventory_2,
+              color: AppTheme.secondaryColor,
+            ),
             label: 'Inventario',
           ),
           NavigationDestination(
             icon: Icon(Icons.dashboard_customize_outlined),
-            selectedIcon: Icon(Icons.dashboard_customize, color: AppTheme.secondaryColor),
+            selectedIcon: Icon(
+              Icons.dashboard_customize,
+              color: AppTheme.secondaryColor,
+            ),
             label: 'Solicitudes',
           ),
           NavigationDestination(
@@ -64,135 +71,130 @@ class _ShelterMainScreenState extends State<ShelterMainScreen> {
 // -------------------------------------------------------------
 // TAB 2: MENSAJERÍA DEL REFUGIO (CON POSTULANTES)
 // -------------------------------------------------------------
-class _ShelterMessagesTab extends StatelessWidget {
+class _ShelterMessagesTab extends StatefulWidget {
   const _ShelterMessagesTab();
 
   @override
+  State<_ShelterMessagesTab> createState() => _ShelterMessagesTabState();
+}
+
+class _ShelterMessagesTabState extends State<_ShelterMessagesTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<MatchesController>(context, listen: false).loadMatches();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final swipe = Provider.of<SwipeController>(context);
-    final pets = swipe.pets;
+    final controller = Provider.of<MatchesController>(context);
+    final chats = controller.matches.where((m) => m.isChatEnabled).toList();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bandeja de Postulantes'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.green[50],
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.green[200]!),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.security, color: AppTheme.successGreen, size: 20),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Canal institucional verificado. Toda conversación queda registrada para el seguimiento del contrato de adopción.',
-                    style: TextStyle(fontSize: 12, color: Colors.black87),
-                  ),
-                ),
-              ],
-            ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: controller.isLoading
+                ? null
+                : () => controller.loadMatches(),
           ),
-          const SizedBox(height: 16),
-
-          if (pets.isNotEmpty) ...[
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              leading: CircleAvatar(
-                radius: 26,
-                backgroundImage: NetworkImage(pets[0].photos.first),
-              ),
-              title: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Sofía Navarro (Por ${pets[0].name})',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('14:32', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-                ],
-              ),
-              subtitle: const Text(
-                'Sofía: "¿Te parece si agendamos una videollamada para conocer a Rocky?"',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
-              ),
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: Colors.green[100], borderRadius: BorderRadius.circular(10)),
-                child: Text('94% Match', style: TextStyle(color: Colors.green[900], fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatScreen(
-                      pet: pets[0],
-                      shelterName: 'Postulante: Sofía Navarro',
-                    ),
-                  ),
-                );
-              },
-            ),
-            const Divider(),
-          ],
-
-          if (pets.length > 1) ...[
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              leading: CircleAvatar(
-                radius: 26,
-                backgroundImage: NetworkImage(pets[1].photos.first),
-              ),
-              title: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Familia Morales (Por ${pets[1].name})',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('Ayer', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-                ],
-              ),
-              subtitle: const Text(
-                'Familia Morales: "Contamos con patio cerrado y quisiéramos coordinar visita."',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
-              ),
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: Colors.green[100], borderRadius: BorderRadius.circular(10)),
-                child: Text('90% Match', style: TextStyle(color: Colors.green[900], fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatScreen(
-                      pet: pets[1],
-                      shelterName: 'Postulante: Familia Morales',
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
         ],
       ),
+      body: controller.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.green[200]!),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.security,
+                        color: AppTheme.successGreen,
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Canal institucional verificado. Toda conversación queda registrada para el seguimiento del contrato de adopción.',
+                          style: TextStyle(fontSize: 12, color: Colors.black87),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (chats.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: Center(
+                      child: Text(
+                        'Todavía no hay postulantes con chat habilitado.\nAprueba solicitudes desde el Tablero de Adopciones.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppTheme.textMuted),
+                      ),
+                    ),
+                  )
+                else
+                  ...chats.map((match) {
+                    final pet = match.pet;
+                    return Column(
+                      children: [
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          leading: CircleAvatar(
+                            radius: 26,
+                            backgroundImage: NetworkImage(
+                              (pet != null && pet.photos.isNotEmpty)
+                                  ? pet.photos.first
+                                  : 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80',
+                            ),
+                          ),
+                          title: Text(
+                            '${match.adopterName ?? 'Postulante'} (Por ${pet?.name ?? '-'})',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            match.statusBadgeText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppTheme.textMuted,
+                              fontSize: 13,
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChatScreen(match: match),
+                              ),
+                            );
+                          },
+                        ),
+                        const Divider(),
+                      ],
+                    );
+                  }),
+              ],
+            ),
     );
   }
 }
@@ -200,22 +202,37 @@ class _ShelterMessagesTab extends StatelessWidget {
 // -------------------------------------------------------------
 // TAB 3: PERFIL DEL REFUGIO / INSTITUCIÓN
 // -------------------------------------------------------------
-class _ShelterProfileTab extends StatelessWidget {
+class _ShelterProfileTab extends StatefulWidget {
   const _ShelterProfileTab();
+
+  @override
+  State<_ShelterProfileTab> createState() => _ShelterProfileTabState();
+}
+
+class _ShelterProfileTabState extends State<_ShelterProfileTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<SwipeController>(context, listen: false).loadInventory();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthController>(context);
     final swipe = Provider.of<SwipeController>(context);
 
-    final totalPets = swipe.pets.length;
-    final availablePets = swipe.pets.where((p) => p.status == 'available').length;
-    final pausedPets = swipe.pets.where((p) => p.status == 'paused').length;
+    final totalPets = swipe.inventory.length;
+    final availablePets = swipe.inventory
+        .where((p) => p.status == 'available')
+        .length;
+    final pausedPets = swipe.inventory
+        .where((p) => p.status == 'paused')
+        .length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Perfil Institucional'),
-      ),
+      appBar: AppBar(title: const Text('Perfil Institucional')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -225,34 +242,72 @@ class _ShelterProfileTab extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 42,
-                  backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.15),
-                  child: const Icon(Icons.shield, size: 50, color: AppTheme.secondaryColor),
+                  backgroundColor: AppTheme.secondaryColor.withValues(
+                    alpha: 0.15,
+                  ),
+                  child: const Icon(
+                    Icons.shield,
+                    size: 50,
+                    color: AppTheme.secondaryColor,
+                  ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Refugio Patitas Felices ONG',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                Text(
+                  auth.profile?.organizationName?.isNotEmpty == true
+                      ? auth.profile!.organizationName!
+                      : (auth.profile?.fullName ?? 'Mi Refugio'),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  auth.currentUserEmail ?? 'refugio@patitasfelices.org',
-                  style: const TextStyle(color: AppTheme.textMuted, fontSize: 14),
+                  auth.currentUserEmail ?? '',
+                  style: const TextStyle(
+                    color: AppTheme.textMuted,
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.15),
+                    color:
+                        (auth.profile?.isVerified == true
+                                ? Colors.blue
+                                : Colors.grey)
+                            .withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.verified, color: Colors.blue, size: 14),
-                      SizedBox(width: 4),
+                      Icon(
+                        auth.profile?.isVerified == true
+                            ? Icons.verified
+                            : Icons.pending_outlined,
+                        color: auth.profile?.isVerified == true
+                            ? Colors.blue
+                            : Colors.grey[700],
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
                       Text(
-                        'Entidad Legal Verificada • Registro Nº 4819',
-                        style: TextStyle(color: Colors.blue, fontSize: 11, fontWeight: FontWeight.bold),
+                        auth.profile?.isVerified == true
+                            ? 'Entidad Verificada'
+                            : 'Verificación Pendiente',
+                        style: TextStyle(
+                          color: auth.profile?.isVerified == true
+                              ? Colors.blue
+                              : Colors.grey[700],
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -270,7 +325,11 @@ class _ShelterProfileTab extends StatelessWidget {
               const SizedBox(width: 10),
               _metricCard('Pausadas', '$pausedPets', Colors.amber[800]!),
               const SizedBox(width: 10),
-              _metricCard('Total Registradas', '$totalPets', AppTheme.primaryColor),
+              _metricCard(
+                'Total Registradas',
+                '$totalPets',
+                AppTheme.primaryColor,
+              ),
             ],
           ),
 
@@ -278,7 +337,9 @@ class _ShelterProfileTab extends StatelessWidget {
 
           // Configuración Institucional
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             elevation: 1,
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -290,10 +351,26 @@ class _ShelterProfileTab extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const Divider(),
-                  _itemRow(Icons.description_outlined, 'Contrato de Adopción Digital', 'Activo y Obligatorio'),
-                  _itemRow(Icons.camera_alt_outlined, 'Seguimiento fotográfico', '1, 3 y 6 meses'),
-                  _itemRow(Icons.handshake_outlined, 'Compromiso de Castración', 'Requerido para cachorros'),
-                  _itemRow(Icons.location_on_outlined, 'Zona de cobertura', 'Radio de 45 km'),
+                  _itemRow(
+                    Icons.description_outlined,
+                    'Contrato de Adopción Digital',
+                    'Activo y Obligatorio',
+                  ),
+                  _itemRow(
+                    Icons.handshake_outlined,
+                    'Compromiso de Castración',
+                    'Requerido para cachorros',
+                  ),
+                  _itemRow(
+                    Icons.phone_outlined,
+                    'Teléfono de contacto',
+                    auth.profile?.phone ?? 'No especificado',
+                  ),
+                  _itemRow(
+                    Icons.location_on_outlined,
+                    'Dirección',
+                    auth.profile?.address ?? 'No especificada',
+                  ),
                 ],
               ),
             ),
@@ -303,18 +380,19 @@ class _ShelterProfileTab extends StatelessWidget {
 
           // Botón Cerrar Sesión
           ListTile(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             tileColor: Colors.red[50],
             leading: const Icon(Icons.logout, color: AppTheme.rejectRed),
-            title: const Text('Cerrar Sesión Institucional', style: TextStyle(color: AppTheme.rejectRed, fontWeight: FontWeight.bold)),
-            onTap: () {
-              auth.logout();
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (route) => false,
-              );
-            },
+            title: const Text(
+              'Cerrar Sesión Institucional',
+              style: TextStyle(
+                color: AppTheme.rejectRed,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onTap: () => auth.logout(),
           ),
           const SizedBox(height: 20),
         ],
@@ -335,7 +413,11 @@ class _ShelterProfileTab extends StatelessWidget {
           children: [
             Text(
               value,
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
             const SizedBox(height: 4),
             FittedBox(
@@ -343,7 +425,11 @@ class _ShelterProfileTab extends StatelessWidget {
               child: Text(
                 label,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -360,7 +446,10 @@ class _ShelterProfileTab extends StatelessWidget {
           Icon(icon, size: 18, color: AppTheme.textMuted),
           const SizedBox(width: 10),
           Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );

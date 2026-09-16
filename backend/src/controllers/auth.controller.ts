@@ -62,4 +62,56 @@ export class AuthController {
       ResponseView.internalError(res, err);
     }
   }
+
+  /**
+   * Crear o actualizar el perfil del usuario autenticado (bootstrap post-login y edición)
+   */
+  static async upsertProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const userId = req.user?.id;
+    if (!userId) {
+      ResponseView.unauthorized(res);
+      return;
+    }
+
+    const { full_name, role, phone, organization_name, address, avatar_url } = req.body;
+
+    if (!full_name || typeof full_name !== 'string' || full_name.trim().length < 2) {
+      ResponseView.error(res, 'El nombre completo es requerido (mínimo 2 caracteres)', 400);
+      return;
+    }
+
+    const allowedRoles = ['adopter', 'shelter', 'individual_rescuer'];
+    if (!role || !allowedRoles.includes(role)) {
+      ResponseView.error(res, 'Rol inválido. Debe ser adopter, shelter o individual_rescuer', 400);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .upsert(
+          {
+            id: userId,
+            full_name: full_name.trim(),
+            role,
+            phone: phone || null,
+            organization_name: organization_name || null,
+            address: address || null,
+            avatar_url: avatar_url || null,
+          },
+          { onConflict: 'id' }
+        )
+        .select()
+        .single();
+
+      if (error) {
+        ResponseView.error(res, error.message, 400);
+        return;
+      }
+
+      ResponseView.success(res, data, 'Perfil guardado correctamente', 201);
+    } catch (err) {
+      ResponseView.internalError(res, err);
+    }
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../models/pet_model.dart';
 import '../../controllers/swipe_controller.dart';
@@ -13,7 +14,8 @@ class ShelterInventoryScreen extends StatefulWidget {
   State<ShelterInventoryScreen> createState() => _ShelterInventoryScreenState();
 }
 
-class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with SingleTickerProviderStateMixin {
+class _ShelterInventoryScreenState extends State<ShelterInventoryScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _searchQuery = '';
 
@@ -21,6 +23,9 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<SwipeController>(context, listen: false).loadInventory();
+    });
   }
 
   @override
@@ -29,10 +34,12 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
     super.dispose();
   }
 
-  void _changePetStatus(PetModel pet, String newStatus, SwipeController controller) {
-    setState(() {
-      controller.updatePetStatus(pet, newStatus);
-    });
+  void _changePetStatus(
+    PetModel pet,
+    String newStatus,
+    SwipeController controller,
+  ) {
+    controller.updatePetStatus(pet, newStatus);
 
     String statusLabel = '';
     switch (newStatus) {
@@ -50,7 +57,9 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${pet.name} ha sido $statusLabel.'),
-        backgroundColor: newStatus == 'adopted' ? AppTheme.successGreen : AppTheme.primaryColor,
+        backgroundColor: newStatus == 'adopted'
+            ? AppTheme.successGreen
+            : AppTheme.primaryColor,
       ),
     );
   }
@@ -58,9 +67,11 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
   @override
   Widget build(BuildContext context) {
     final swipeController = Provider.of<SwipeController>(context);
-    final allPets = swipeController.pets;
+    final allPets = swipeController.inventory;
 
-    final availablePets = allPets.where((p) => p.status == 'available').toList();
+    final availablePets = allPets
+        .where((p) => p.status == 'available')
+        .toList();
     final pausedPets = allPets.where((p) => p.status == 'paused').toList();
     final adoptedPets = allPets.where((p) => p.status == 'adopted').toList();
 
@@ -118,17 +129,23 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
             children: [
               // Barra de búsqueda rápida
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 child: TextField(
                   decoration: InputDecoration(
                     hintText: 'Buscar por nombre o raza...',
                     prefixIcon: const Icon(Icons.search),
                     isDense: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     filled: true,
                     fillColor: Colors.grey[100],
                   ),
-                  onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
+                  onChanged: (v) =>
+                      setState(() => _searchQuery = v.trim().toLowerCase()),
                 ),
               ),
 
@@ -150,7 +167,10 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppTheme.primaryColor,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Nueva Mascota', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text(
+          'Nueva Mascota',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         onPressed: () {
           Navigator.push(
             context,
@@ -170,15 +190,29 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
       ),
       child: Text(
         '$count',
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
 
-  Widget _buildPetList(List<PetModel> pets, SwipeController controller, String listType) {
+  Widget _buildPetList(
+    List<PetModel> pets,
+    SwipeController controller,
+    String listType,
+  ) {
     final filtered = _searchQuery.isEmpty
         ? pets
-        : pets.where((p) => p.name.toLowerCase().contains(_searchQuery) || p.breed.toLowerCase().contains(_searchQuery)).toList();
+        : pets
+              .where(
+                (p) =>
+                    p.name.toLowerCase().contains(_searchQuery) ||
+                    p.breed.toLowerCase().contains(_searchQuery),
+              )
+              .toList();
 
     if (filtered.isEmpty) {
       return Center(
@@ -190,7 +224,9 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
               Icon(
                 listType == 'available'
                     ? Icons.pets
-                    : (listType == 'paused' ? Icons.pause_circle_outline : Icons.celebration),
+                    : (listType == 'paused'
+                          ? Icons.pause_circle_outline
+                          : Icons.celebration),
                 size: 64,
                 color: Colors.grey[400],
               ),
@@ -198,8 +234,14 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
               Text(
                 listType == 'available'
                     ? 'No hay mascotas disponibles actualmente'
-                    : (listType == 'paused' ? 'No hay mascotas pausadas' : 'Aún no hay adopciones concluidas'),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textDark),
+                    : (listType == 'paused'
+                          ? 'No hay mascotas pausadas'
+                          : 'Aún no hay adopciones concluidas'),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: AppTheme.textDark,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
@@ -222,7 +264,9 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
         final pet = filtered[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           elevation: 2,
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -236,9 +280,7 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
                     width: 80,
                     height: 80,
                     child: Image.network(
-                      pet.photos.isNotEmpty
-                          ? pet.photos.first
-                          : 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80',
+                      pet.photos.isNotEmpty ? pet.photos.first : 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80',
                       fit: BoxFit.cover,
                       errorBuilder: (_, _, _) => Container(
                         color: Colors.grey[200],
@@ -260,7 +302,10 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
                           Expanded(
                             child: Text(
                               pet.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 17,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -269,7 +314,10 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
                       ),
                       Text(
                         '${pet.breed} • ${pet.ageFormatted}',
-                        style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                        style: const TextStyle(
+                          color: AppTheme.textMuted,
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Wrap(
@@ -282,6 +330,13 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
                             _miniBadge('Castrado/a', Colors.teal),
                           if (pet.isRelocated)
                             _miniBadge('Reubicación', Colors.red),
+                          if (pet.moderationStatus == 'pending')
+                            _miniBadge(
+                              'Pendiente de Moderación',
+                              Colors.orange,
+                            ),
+                          if (pet.moderationStatus == 'rejected')
+                            _miniBadge('Rechazada por Moderación', Colors.red),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -291,15 +346,26 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
                         children: [
                           OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               visualDensity: VisualDensity.compact,
                             ),
-                            icon: const Icon(Icons.assignment_outlined, size: 14),
-                            label: const Text('Solicitudes', style: TextStyle(fontSize: 11)),
+                            icon: const Icon(
+                              Icons.assignment_outlined,
+                              size: 14,
+                            ),
+                            label: const Text(
+                              'Solicitudes',
+                              style: TextStyle(fontSize: 11),
+                            ),
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const ShelterKanbanScreen()),
+                                MaterialPageRoute(
+                                  builder: (_) => const ShelterKanbanScreen(),
+                                ),
                               );
                             },
                           ),
@@ -316,7 +382,11 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
                                   value: 'available',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.play_circle_outline, color: Colors.green, size: 18),
+                                      Icon(
+                                        Icons.play_circle_outline,
+                                        color: Colors.green,
+                                        size: 18,
+                                      ),
                                       SizedBox(width: 8),
                                       Text('Activar (Disponible)'),
                                     ],
@@ -327,7 +397,11 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
                                   value: 'paused',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.pause_circle_outline, color: Colors.amber, size: 18),
+                                      Icon(
+                                        Icons.pause_circle_outline,
+                                        color: Colors.amber,
+                                        size: 18,
+                                      ),
                                       SizedBox(width: 8),
                                       Text('Pausar Publicación'),
                                     ],
@@ -338,7 +412,11 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
                                   value: 'adopted',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.celebration, color: Colors.purple, size: 18),
+                                      Icon(
+                                        Icons.celebration,
+                                        color: Colors.purple,
+                                        size: 18,
+                                      ),
                                       SizedBox(width: 8),
                                       Text('Marcar como Adoptada 🎉'),
                                     ],
@@ -379,7 +457,11 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -393,7 +475,11 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen> with Si
       ),
       child: Text(
         text,
-        style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

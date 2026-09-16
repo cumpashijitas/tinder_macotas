@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/swipe_controller.dart';
 import '../../controllers/pet_filter_controller.dart';
-import '../../models/adopter_form_model.dart';
+import '../../controllers/matches_controller.dart';
+import '../../controllers/adopter_form_controller.dart';
 import '../feed/pet_grid_feed_view.dart';
 import '../feed/widgets/advanced_filter_modal.dart';
 import '../feed/widgets/pet_detail_sheet.dart';
@@ -15,7 +17,6 @@ import '../chat/chat_screen.dart';
 import '../onboarding_form/adoption_wizard_screen.dart';
 import '../relocation/relocation_request_screen.dart';
 import '../community/happy_tails_screen.dart';
-import '../auth/login_screen.dart';
 
 class AdopterMainScreen extends StatefulWidget {
   const AdopterMainScreen({super.key});
@@ -119,7 +120,9 @@ class _ExploreTab extends StatelessWidget {
                   tooltip: 'Vista Cuadrícula (Pinterest)',
                   icon: Icon(
                     Icons.grid_view_rounded,
-                    color: filter.isGridView ? AppTheme.primaryColor : Colors.grey[400],
+                    color: filter.isGridView
+                        ? AppTheme.primaryColor
+                        : Colors.grey[400],
                     size: 20,
                   ),
                   onPressed: () => filter.setViewMode(true),
@@ -128,7 +131,9 @@ class _ExploreTab extends StatelessWidget {
                   tooltip: 'Vista Deslizable (Swipe)',
                   icon: Icon(
                     Icons.view_carousel_rounded,
-                    color: !filter.isGridView ? AppTheme.primaryColor : Colors.grey[400],
+                    color: !filter.isGridView
+                        ? AppTheme.primaryColor
+                        : Colors.grey[400],
                     size: 20,
                   ),
                   onPressed: () => filter.setViewMode(false),
@@ -156,11 +161,18 @@ class _ExploreTab extends StatelessWidget {
                       color: AppTheme.primaryColor,
                       shape: BoxShape.circle,
                     ),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
                     child: Text(
                       '${filter.activeFilterCount}',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -219,12 +231,17 @@ class _ExploreTab extends StatelessWidget {
                   constraints: const BoxConstraints(maxWidth: 800),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
                     child: Row(
                       children: [
                         _quickFilterChip(
                           label: 'Todos',
-                          selected: filter.selectedSpecies == 'all' && filter.selectedPublisherType == 'all',
+                          selected:
+                              filter.selectedSpecies == 'all' &&
+                              filter.selectedPublisherType == 'all',
                           onTap: () {
                             filter.setSelectedSpecies('all');
                             filter.setSelectedPublisherType('all');
@@ -234,31 +251,50 @@ class _ExploreTab extends StatelessWidget {
                         _quickFilterChip(
                           label: '🐶 Perros',
                           selected: filter.selectedSpecies == 'dog',
-                          onTap: () => filter.setSelectedSpecies(filter.selectedSpecies == 'dog' ? 'all' : 'dog'),
+                          onTap: () => filter.setSelectedSpecies(
+                            filter.selectedSpecies == 'dog' ? 'all' : 'dog',
+                          ),
                         ),
                         const SizedBox(width: 6),
                         _quickFilterChip(
                           label: '🐱 Gatos',
                           selected: filter.selectedSpecies == 'cat',
-                          onTap: () => filter.setSelectedSpecies(filter.selectedSpecies == 'cat' ? 'all' : 'cat'),
+                          onTap: () => filter.setSelectedSpecies(
+                            filter.selectedSpecies == 'cat' ? 'all' : 'cat',
+                          ),
                         ),
                         const SizedBox(width: 6),
                         _quickFilterChip(
                           label: '🏠 Refugios',
                           selected: filter.selectedPublisherType == 'shelter',
-                          onTap: () => filter.setSelectedPublisherType(filter.selectedPublisherType == 'shelter' ? 'all' : 'shelter'),
+                          onTap: () => filter.setSelectedPublisherType(
+                            filter.selectedPublisherType == 'shelter'
+                                ? 'all'
+                                : 'shelter',
+                          ),
                         ),
                         const SizedBox(width: 6),
                         _quickFilterChip(
                           label: '🍼 Camadas',
-                          selected: filter.selectedPublisherType == 'individual_rescuer',
-                          onTap: () => filter.setSelectedPublisherType(filter.selectedPublisherType == 'individual_rescuer' ? 'all' : 'individual_rescuer'),
+                          selected:
+                              filter.selectedPublisherType ==
+                              'individual_rescuer',
+                          onTap: () => filter.setSelectedPublisherType(
+                            filter.selectedPublisherType == 'individual_rescuer'
+                                ? 'all'
+                                : 'individual_rescuer',
+                          ),
                         ),
                         const SizedBox(width: 6),
                         _quickFilterChip(
                           label: '⚠️ Reubicación',
-                          selected: filter.selectedPublisherType == 'relinquished',
-                          onTap: () => filter.setSelectedPublisherType(filter.selectedPublisherType == 'relinquished' ? 'all' : 'relinquished'),
+                          selected:
+                              filter.selectedPublisherType == 'relinquished',
+                          onTap: () => filter.setSelectedPublisherType(
+                            filter.selectedPublisherType == 'relinquished'
+                                ? 'all'
+                                : 'relinquished',
+                          ),
                         ),
                       ],
                     ),
@@ -272,21 +308,37 @@ class _ExploreTab extends StatelessWidget {
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 480),
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 18),
+                          const Icon(
+                            Icons.check_circle,
+                            color: AppTheme.primaryColor,
+                            size: 18,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               swipe.lastSwipeFeedback!,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textDark),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textDark,
+                              ),
                             ),
                           ),
                         ],
@@ -308,15 +360,23 @@ class _ExploreTab extends StatelessWidget {
     );
   }
 
-  Widget _quickFilterChip({required String label, required bool selected, required VoidCallback onTap}) {
+  Widget _quickFilterChip({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppTheme.primaryColor.withValues(alpha: 0.15) : Colors.grey[100],
+          color: selected
+              ? AppTheme.primaryColor.withValues(alpha: 0.15)
+              : Colors.grey[100],
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: selected ? AppTheme.primaryColor : Colors.transparent),
+          border: Border.all(
+            color: selected ? AppTheme.primaryColor : Colors.transparent,
+          ),
         ),
         child: Text(
           label,
@@ -330,7 +390,16 @@ class _ExploreTab extends StatelessWidget {
     );
   }
 
-  Widget _buildSwipeView(BuildContext context, SwipeController swipe, List<dynamic> filteredPets) {
+  Widget _buildSwipeView(
+    BuildContext context,
+    SwipeController swipe,
+    List<dynamic> filteredPets,
+  ) {
+    final adopterForm = Provider.of<AdopterFormController>(
+      context,
+      listen: false,
+    ).form;
+
     if (filteredPets.isEmpty) {
       return Center(
         child: Column(
@@ -341,7 +410,10 @@ class _ExploreTab extends StatelessWidget {
             const Text('No hay mascotas con estos filtros'),
             const SizedBox(height: 8),
             TextButton(
-              onPressed: () => Provider.of<PetFilterController>(context, listen: false).resetFilters(),
+              onPressed: () => Provider.of<PetFilterController>(
+                context,
+                listen: false,
+              ).resetFilters(),
               child: const Text('Restablecer Filtros'),
             ),
           ],
@@ -356,19 +428,25 @@ class _ExploreTab extends StatelessWidget {
           children: [
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 child: CardSwiper(
                   controller: swipe.cardSwiperController,
                   cardsCount: filteredPets.length,
-                  onSwipe: (prev, curr, dir) => swipe.handleSwipe(prev, curr, dir),
-                  numberOfCardsDisplayed: filteredPets.length > 2 ? 3 : filteredPets.length,
+                  onSwipe: (prev, curr, dir) =>
+                      swipe.handleSwipe(prev, curr, dir),
+                  numberOfCardsDisplayed: filteredPets.length > 2
+                      ? 3
+                      : filteredPets.length,
                   backCardOffset: const Offset(0, 35),
                   padding: const EdgeInsets.all(4.0),
                   cardBuilder: (context, index, percentX, percentY) {
                     final pet = filteredPets[index];
                     return PetCardWidget(
                       pet: pet,
-                      adopterProfile: AdopterFormModel(),
+                      adopterProfile: adopterForm,
                       onInfoTap: () => PetDetailSheet.show(context, pet),
                     );
                   },
@@ -382,9 +460,27 @@ class _ExploreTab extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildRoundAction(Icons.close, AppTheme.rejectRed, 50, 24, swipe.swipeLeft),
-                  _buildRoundAction(Icons.star, Colors.amber[700]!, 42, 20, swipe.swipeTop),
-                  _buildRoundAction(Icons.favorite, AppTheme.primaryColor, 56, 28, swipe.swipeRight),
+                  _buildRoundAction(
+                    Icons.close,
+                    AppTheme.rejectRed,
+                    50,
+                    24,
+                    swipe.swipeLeft,
+                  ),
+                  _buildRoundAction(
+                    Icons.star,
+                    Colors.amber[700]!,
+                    42,
+                    20,
+                    swipe.swipeTop,
+                  ),
+                  _buildRoundAction(
+                    Icons.favorite,
+                    AppTheme.primaryColor,
+                    56,
+                    28,
+                    swipe.swipeRight,
+                  ),
                 ],
               ),
             ),
@@ -394,7 +490,13 @@ class _ExploreTab extends StatelessWidget {
     );
   }
 
-  Widget _buildRoundAction(IconData icon, Color color, double size, double iconSize, VoidCallback onTap) {
+  Widget _buildRoundAction(
+    IconData icon,
+    Color color,
+    double size,
+    double iconSize,
+    VoidCallback onTap,
+  ) {
     return Container(
       width: size,
       height: size,
@@ -420,148 +522,126 @@ class _ExploreTab extends StatelessWidget {
 // -------------------------------------------------------------
 // TAB 2: MENSAJES (CHAT LIST)
 // -------------------------------------------------------------
-class _MessagesTab extends StatelessWidget {
+class _MessagesTab extends StatefulWidget {
   const _MessagesTab();
 
   @override
+  State<_MessagesTab> createState() => _MessagesTabState();
+}
+
+class _MessagesTabState extends State<_MessagesTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<MatchesController>(context, listen: false).loadMatches();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final swipe = Provider.of<SwipeController>(context);
-    final pets = swipe.pets;
+    final controller = Provider.of<MatchesController>(context);
+    final chats = controller.matches.where((m) => m.isChatEnabled).toList();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mensajes y Entrevistas'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Banner de seguridad
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.blue[200]!),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.lock_outline, color: Colors.blue, size: 20),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Chat seguro interno. No necesitas compartir tu número telefónico ni datos personales sensibles.',
-                    style: TextStyle(fontSize: 12, color: Colors.black87),
-                  ),
-                ),
-              ],
-            ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: controller.isLoading
+                ? null
+                : () => controller.loadMatches(),
           ),
-          const SizedBox(height: 16),
-
-          if (pets.isNotEmpty) ...[
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              leading: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundImage: NetworkImage(pets[0].photos.first),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: AppTheme.successGreen,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              title: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Refugio Patitas Felices (${pets[0].name})',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('14:32', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-                ],
-              ),
-              subtitle: const Text(
-                '¿Te parece si agendamos una videollamada para que conozcas a Rocky?',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
-              ),
-              trailing: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(color: AppTheme.primaryColor, shape: BoxShape.circle),
-                child: const Text('1', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatScreen(
-                      pet: pets[0],
-                      shelterName: 'Refugio Patitas Felices',
-                    ),
-                  ),
-                );
-              },
-            ),
-            const Divider(),
-          ],
-
-          if (pets.length > 1) ...[
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              leading: CircleAvatar(
-                radius: 26,
-                backgroundImage: NetworkImage(pets[1].photos.first),
-              ),
-              title: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Familia Dante (${pets[1].name})',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('Ayer', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-                ],
-              ),
-              subtitle: const Text(
-                '¡Muchas gracias por postularte! Estamos revisando el patio...',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatScreen(
-                      pet: pets[1],
-                      shelterName: 'Familia Dante (Camada)',
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
         ],
       ),
+      body: controller.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.blue[200]!),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.lock_outline, color: Colors.blue, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Chat seguro interno. No necesitas compartir tu número telefónico ni datos personales sensibles.',
+                          style: TextStyle(fontSize: 12, color: Colors.black87),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (chats.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: Center(
+                      child: Text(
+                        'Todavía no tienes chats activos.\nSe habilitan cuando un publicador aprueba tu postulación.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppTheme.textMuted),
+                      ),
+                    ),
+                  )
+                else
+                  ...chats.map((match) {
+                    final pet = match.pet;
+                    return Column(
+                      children: [
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          leading: CircleAvatar(
+                            radius: 26,
+                            backgroundImage: NetworkImage(
+                              (pet != null && pet.photos.isNotEmpty)
+                                  ? pet.photos.first
+                                  : 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80',
+                            ),
+                          ),
+                          title: Text(
+                            pet?.name ?? 'Chat',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            match.statusBadgeText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppTheme.textMuted,
+                              fontSize: 13,
+                            ),
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ChatScreen(match: match),
+                              ),
+                            );
+                          },
+                        ),
+                        const Divider(),
+                      ],
+                    );
+                  }),
+              ],
+            ),
     );
   }
 }
@@ -569,17 +649,34 @@ class _MessagesTab extends StatelessWidget {
 // -------------------------------------------------------------
 // TAB 3: MI PERFIL Y ESTILO DE VIDA (CON REUBICACIÓN)
 // -------------------------------------------------------------
-class _AdopterProfileTab extends StatelessWidget {
+class _AdopterProfileTab extends StatefulWidget {
   const _AdopterProfileTab();
+
+  @override
+  State<_AdopterProfileTab> createState() => _AdopterProfileTabState();
+}
+
+class _AdopterProfileTabState extends State<_AdopterProfileTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AdopterFormController>(
+        context,
+        listen: false,
+      ).loadExistingForm();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthController>(context);
+    final formController = Provider.of<AdopterFormController>(context);
+    final form = formController.form;
+    final hasForm = formController.isCompleted;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mi Perfil de Adoptante'),
-      ),
+      appBar: AppBar(title: const Text('Mi Perfil de Adoptante')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 680),
@@ -592,29 +689,65 @@ class _AdopterProfileTab extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.15),
-                      child: const Icon(Icons.person, size: 48, color: AppTheme.primaryColor),
+                      backgroundColor: AppTheme.primaryColor.withValues(
+                        alpha: 0.15,
+                      ),
+                      child: const Icon(
+                        Icons.person,
+                        size: 48,
+                        color: AppTheme.primaryColor,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      auth.currentUserEmail ?? 'adoptante@petmatch.com',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      auth.profile?.fullName ??
+                          auth.currentUserEmail ??
+                          'Adoptante',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    Text(
+                      auth.currentUserEmail ?? '',
+                      style: const TextStyle(
+                        color: AppTheme.textMuted,
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: AppTheme.successGreen.withValues(alpha: 0.15),
+                        color: (hasForm ? AppTheme.successGreen : Colors.amber)
+                            .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.verified, color: AppTheme.successGreen, size: 14),
-                          SizedBox(width: 4),
+                          Icon(
+                            hasForm ? Icons.verified : Icons.pending_outlined,
+                            color: hasForm
+                                ? AppTheme.successGreen
+                                : Colors.amber[800],
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
                           Text(
-                            'Perfil Verificado y Cuestionario Completo',
-                            style: TextStyle(color: AppTheme.successGreen, fontSize: 11, fontWeight: FontWeight.bold),
+                            hasForm
+                                ? 'Cuestionario de Adopción Completo'
+                                : 'Cuestionario Pendiente',
+                            style: TextStyle(
+                              color: hasForm
+                                  ? AppTheme.successGreen
+                                  : Colors.amber[800],
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -627,7 +760,9 @@ class _AdopterProfileTab extends StatelessWidget {
 
               // Resumen de Estilo de Vida
               Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 elevation: 1,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -639,27 +774,77 @@ class _AdopterProfileTab extends StatelessWidget {
                         children: [
                           const Text(
                             'Cuestionario de Estilo de Vida',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                           TextButton.icon(
                             icon: const Icon(Icons.edit, size: 14),
-                            label: const Text('Editar', style: TextStyle(fontSize: 12)),
+                            label: const Text(
+                              'Editar',
+                              style: TextStyle(fontSize: 12),
+                            ),
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const AdoptionWizardScreen()),
+                                MaterialPageRoute(
+                                  builder: (_) => const AdoptionWizardScreen(),
+                                ),
                               );
                             },
                           ),
                         ],
                       ),
                       const Divider(),
-                      _profileItem(Icons.home_outlined, 'Tipo de Vivienda', 'Casa con patio cerrado'),
-                      _profileItem(Icons.key_outlined, 'Condición de Ocupación', 'Propietario/a (Permite mascotas)'),
-                      _profileItem(Icons.timer_outlined, 'Horas que pasará solo', '4 horas al día aprox.'),
-                      _profileItem(Icons.pets, 'Mascotas actuales', '1 perro mestizo esterilizado'),
-                      _profileItem(Icons.attach_money, 'Presupuesto mensual est.', 'Alimento premium y veterinario'),
-                      _profileItem(Icons.shield_outlined, 'Compromiso de Castración', 'Firmado y Aceptado'),
+                      if (!hasForm)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            'Todavía no completaste el cuestionario. Complétalo para poder postularte a mascotas.',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 13,
+                            ),
+                          ),
+                        )
+                      else ...[
+                        _profileItem(
+                          Icons.home_outlined,
+                          'Tipo de Vivienda',
+                          '${form.housingTypeLabel} • ${form.housingStatusLabel}',
+                        ),
+                        _profileItem(
+                          Icons.groups_outlined,
+                          'Convivencia',
+                          form.householdMembersLabel,
+                        ),
+                        _profileItem(
+                          Icons.timer_outlined,
+                          'Horas que pasará solo',
+                          '${form.hoursPetAlonePerDay} horas al día aprox.',
+                        ),
+                        _profileItem(
+                          Icons.pets,
+                          'Otras mascotas',
+                          form.hasOtherPets
+                              ? (form.otherPetsDetails ?? 'Sí')
+                              : 'No tiene',
+                        ),
+                        _profileItem(
+                          Icons.shield_outlined,
+                          'Compromiso de Castración',
+                          form.agreesToMandatoryNeutering
+                              ? 'Aceptado'
+                              : 'No aceptado',
+                        ),
+                        if (form.evaluationStatus != null)
+                          _profileItem(
+                            Icons.fact_check_outlined,
+                            'Estado de Evaluación',
+                            _evaluationStatusLabel(form.evaluationStatus!),
+                          ),
+                      ],
                     ],
                   ),
                 ),
@@ -680,12 +865,20 @@ class _AdopterProfileTab extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.home_work_outlined, color: Colors.amber, size: 24),
+                        const Icon(
+                          Icons.home_work_outlined,
+                          color: Colors.amber,
+                          size: 24,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Reubicación por Mudanza o Fuerza Mayor',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.brown[900]),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.brown[900],
+                            ),
                           ),
                         ),
                       ],
@@ -693,7 +886,11 @@ class _AdopterProfileTab extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       'Si enfrentas una mudanza urgente, desalojo o imposibilidad comprobable de mantener a tu animalito, puedes solicitar su reubicación responsable bajo nuestro protocolo estricto.',
-                      style: TextStyle(fontSize: 12, color: Colors.brown[800], height: 1.3),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.brown[800],
+                        height: 1.3,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -703,12 +900,20 @@ class _AdopterProfileTab extends StatelessWidget {
                           backgroundColor: Colors.brown[800],
                           foregroundColor: Colors.white,
                         ),
-                        icon: const Icon(Icons.app_registration_rounded, size: 16),
-                        label: const Text('Iniciar Solicitud de Reubicación', style: TextStyle(fontSize: 13)),
+                        icon: const Icon(
+                          Icons.app_registration_rounded,
+                          size: 16,
+                        ),
+                        label: const Text(
+                          'Iniciar Solicitud de Reubicación',
+                          style: TextStyle(fontSize: 13),
+                        ),
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const RelocationRequestScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const RelocationRequestScreen(),
+                            ),
                           );
                         },
                       ),
@@ -721,18 +926,19 @@ class _AdopterProfileTab extends StatelessWidget {
 
               // Botón Cerrar Sesión
               ListTile(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 tileColor: Colors.red[50],
                 leading: const Icon(Icons.logout, color: AppTheme.rejectRed),
-                title: const Text('Cerrar Sesión', style: TextStyle(color: AppTheme.rejectRed, fontWeight: FontWeight.bold)),
-                onTap: () {
-                  auth.logout();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-                },
+                title: const Text(
+                  'Cerrar Sesión',
+                  style: TextStyle(
+                    color: AppTheme.rejectRed,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                onTap: () => auth.logout(),
               ),
               const SizedBox(height: 20),
             ],
@@ -740,6 +946,19 @@ class _AdopterProfileTab extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _evaluationStatusLabel(String status) {
+    switch (status) {
+      case 'approved':
+        return 'Aprobado';
+      case 'requires_interview':
+        return 'Requiere Entrevista';
+      case 'rejected':
+        return 'Rechazado';
+      default:
+        return 'Pendiente';
+    }
   }
 
   Widget _profileItem(IconData icon, String label, String value) {
@@ -752,7 +971,10 @@ class _AdopterProfileTab extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             flex: 5,
-            child: Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.textMuted)),
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -760,7 +982,11 @@ class _AdopterProfileTab extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textDark),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textDark,
+              ),
             ),
           ),
         ],

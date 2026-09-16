@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_theme.dart';
 import '../../../models/pet_model.dart';
 
@@ -47,7 +48,11 @@ class HealthBookletModal extends StatelessWidget {
                         color: Colors.blue[50],
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.menu_book, color: Colors.blue, size: 28),
+                      child: const Icon(
+                        Icons.menu_book,
+                        color: Colors.blue,
+                        size: 28,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -56,11 +61,17 @@ class HealthBookletModal extends StatelessWidget {
                         children: [
                           Text(
                             'Libreta Sanitaria Digital',
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           Text(
                             'Historial clínico oficial de ${pet.name}',
-                            style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                            style: const TextStyle(
+                              color: AppTheme.textMuted,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
@@ -70,41 +81,72 @@ class HealthBookletModal extends StatelessWidget {
 
                 const Divider(height: 32),
 
-                const Text('Vacunación Aplicada', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text(
+                  'Vacunación Aplicada',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
                 const SizedBox(height: 8),
                 if (pet.vaccinesApplied.isEmpty)
-                  const Text('No registra vacunas aplicadas aún.', style: TextStyle(color: AppTheme.textMuted))
+                  const Text(
+                    'No registra vacunas aplicadas aún.',
+                    style: TextStyle(color: AppTheme.textMuted),
+                  )
                 else
                   ...pet.vaccinesApplied.map((vac) {
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.check_circle, color: AppTheme.successGreen),
-                      title: Text(vac, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                      subtitle: const Text('Dosis certificada por veterinario matriculado', style: TextStyle(fontSize: 12)),
+                      leading: const Icon(
+                        Icons.check_circle,
+                        color: AppTheme.successGreen,
+                      ),
+                      title: Text(
+                        vac,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        'Dosis certificada por veterinario matriculado',
+                        style: TextStyle(fontSize: 12),
+                      ),
                       trailing: Text(
                         'Al día',
-                        style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold, fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.green[800],
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
                     );
                   }),
 
                 const SizedBox(height: 20),
 
-                const Text('Desparasitación y Prevención', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text(
+                  'Desparasitación y Prevención',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
                 const SizedBox(height: 8),
                 _buildHealthItem(
                   'Desparasitación Interna',
-                  pet.dewormedInternal ? 'Completada (Pastilla antiparasitaria)' : 'Pendiente',
+                  pet.dewormedInternal
+                      ? 'Completada (Pastilla antiparasitaria)'
+                      : 'Pendiente',
                   pet.dewormedInternal,
                 ),
                 _buildHealthItem(
                   'Control de Pulgas y Garrapatas',
-                  pet.dewormedExternal ? 'Al día (Pipeta protectora aplicada)' : 'Pendiente',
+                  pet.dewormedExternal
+                      ? 'Al día (Pipeta protectora aplicada)'
+                      : 'Pendiente',
                   pet.dewormedExternal,
                 ),
                 _buildHealthItem(
                   'Microchip de Identificación',
-                  pet.hasMicrochip ? 'Implantado bajo piel con código ISO' : 'No implantado',
+                  pet.hasMicrochip
+                      ? 'Implantado bajo piel con código ISO'
+                      : 'No implantado',
                   pet.hasMicrochip,
                 ),
 
@@ -127,7 +169,11 @@ class HealthBookletModal extends StatelessWidget {
                           SizedBox(width: 8),
                           Text(
                             'Próximos Controles y Revacunación',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 14),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
@@ -167,8 +213,20 @@ class HealthBookletModal extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                Text(subtitle, style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.textMuted,
+                  ),
+                ),
               ],
             ),
           ),

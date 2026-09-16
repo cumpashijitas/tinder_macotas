@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+
 import '../models/pet_model.dart';
 
 class PetFilterController extends ChangeNotifier {
   bool _isGridView = true;
   String _searchQuery = '';
   double _maxDistanceKm = 50.0;
-  final Set<String> _selectedAgeStages = {}; // 'puppy', 'young', 'adult', 'senior'
+  final Set<String> _selectedAgeStages =
+      {}; // 'puppy', 'young', 'adult', 'senior'
   final Set<String> _selectedSizes = {}; // 'small', 'medium', 'large', 'giant'
   int _maxEnergyLevel = 5;
   bool _onlyGoodWithKids = false;
@@ -15,7 +17,8 @@ class PetFilterController extends ChangeNotifier {
   bool _onlyVaccinated = false;
   bool _onlyNeutered = false;
   String _selectedSpecies = 'all'; // 'all', 'dog', 'cat'
-  String _selectedPublisherType = 'all'; // 'all', 'shelter', 'individual_rescuer', 'relinquished'
+  String _selectedPublisherType =
+      'all'; // 'all', 'shelter', 'individual_rescuer', 'relinquished'
 
   // Getters
   bool get isGridView => _isGridView;
@@ -215,7 +218,8 @@ class PetFilterController extends ChangeNotifier {
       if (_onlyGoodWithDogs && !pet.goodWithDogs) return false;
 
       // Necesidades especiales
-      if (_onlySpecialNeeds && (pet.specialNeeds == null || pet.specialNeeds!.trim().isEmpty)) {
+      if (_onlySpecialNeeds &&
+          (pet.specialNeeds == null || pet.specialNeeds!.trim().isEmpty)) {
         return false;
       }
 

@@ -1,17 +1,43 @@
 import 'package:flutter/material.dart';
+
+import '../core/services/api_service.dart';
 import '../models/adopter_form_model.dart';
 
 class AdopterFormController extends ChangeNotifier {
-  final AdopterFormModel form = AdopterFormModel();
+  final ApiService _api;
+
+  AdopterFormController({ApiService? apiService})
+    : _api = apiService ?? ApiService();
+
+  AdopterFormModel form = AdopterFormModel();
   int _currentStep = 0;
+  bool _isLoading = false;
   bool _isSubmitting = false;
   String? _errorMessage;
   bool _isCompleted = false;
 
   int get currentStep => _currentStep;
+  bool get isLoading => _isLoading;
   bool get isSubmitting => _isSubmitting;
   String? get errorMessage => _errorMessage;
   bool get isCompleted => _isCompleted;
+
+  /// Carga el formulario ya guardado del adoptante (si existe)
+  Future<void> loadExistingForm() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final data = await _api.get('/adopter/form');
+      if (data != null) {
+        form = AdopterFormModel.fromJson(data as Map<String, dynamic>);
+        _isCompleted = true;
+      }
+    } catch (_) {
+      // Sin formulario previo o sin conexión; se completa desde cero
+    }
+    _isLoading = false;
+    notifyListeners();
+  }
 
   void nextStep() {
     if (_currentStep < 3) {
@@ -80,23 +106,22 @@ class AdopterFormController extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
+    if (!form.allMembersAgree) {
+      _errorMessage = 'Es requisito fundamental que todos los miembros del hogar estén de acuerdo con la adopción.';
+      _isSubmitting = false;
+      notifyListeners();
+      return false;
+    }
+
     try {
-      // Simular procesamiento del algoritmo de idoneidad o envío al backend
-      await Future.delayed(const Duration(milliseconds: 1000));
-
-      if (!form.allMembersAgree) {
-        _errorMessage = 'Es requisito fundamental que todos los miembros del hogar estén de acuerdo con la adopción.';
-        _isSubmitting = false;
-        notifyListeners();
-        return false;
-      }
-
+      final data = await _api.post('/adopter/form', form.toJson());
+      form = AdopterFormModel.fromJson(data as Map<String, dynamic>);
       _isCompleted = true;
       _isSubmitting = false;
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = 'Ocurrió un error al enviar el formulario.';
+      _errorMessage = e.toString();
       _isSubmitting = false;
       notifyListeners();
       return false;

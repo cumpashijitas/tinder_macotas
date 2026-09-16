@@ -53,12 +53,56 @@ class AdopterFormModel {
       monthlyBudgetConfirmed: json['monthly_budget_confirmed'] as bool? ?? true,
       emergencyFundAvailable: json['emergency_fund_available'] as bool? ?? true,
       agreesToFollowUp: json['agrees_to_follow_up'] as bool? ?? true,
-      agreesToMandatoryNeutering: json['agrees_to_mandatory_neutering'] as bool? ?? true,
+      agreesToMandatoryNeutering:
+          json['agrees_to_mandatory_neutering'] as bool? ?? true,
       evaluationStatus: json['evaluation_status'] as String?,
       evaluationScore: (json['evaluation_score'] is num)
           ? (json['evaluation_score'] as num).toDouble()
           : null,
     );
+  }
+
+  String get housingTypeLabel {
+    switch (housingType) {
+      case 'house':
+        return 'Casa';
+      case 'apartment':
+        return 'Departamento';
+      case 'farm':
+        return 'Chacra / Campo';
+      default:
+        return 'Otro';
+    }
+  }
+
+  String get housingStatusLabel {
+    switch (housingStatus) {
+      case 'owned':
+        return 'Propietario/a';
+      case 'rented_allowed':
+        return 'Alquiler (mascotas permitidas)';
+      case 'rented_pending_permission':
+        return 'Alquiler (permiso pendiente)';
+      default:
+        return housingStatus;
+    }
+  }
+
+  String get householdMembersLabel {
+    switch (householdMembers) {
+      case 'alone':
+        return 'Vive solo/a';
+      case 'couple':
+        return 'En pareja';
+      case 'family_with_young_kids':
+        return 'Familia con niños pequeños';
+      case 'family_with_teens':
+        return 'Familia con adolescentes';
+      case 'roommates':
+        return 'Con compañeros de casa';
+      default:
+        return householdMembers;
+    }
   }
 
   Map<String, dynamic> toJson() {

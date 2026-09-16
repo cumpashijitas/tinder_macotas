@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../models/pet_model.dart';
 import '../../models/adopter_form_model.dart';
@@ -12,10 +13,7 @@ import 'widgets/pet_detail_sheet.dart';
 class PetGridFeedView extends StatelessWidget {
   final List<PetModel> pets;
 
-  const PetGridFeedView({
-    super.key,
-    required this.pets,
-  });
+  const PetGridFeedView({super.key, required this.pets});
 
   @override
   Widget build(BuildContext context) {
@@ -29,12 +27,20 @@ class PetGridFeedView extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.search_off_rounded, size: 72, color: AppTheme.textMuted),
+              const Icon(
+                Icons.search_off_rounded,
+                size: 72,
+                color: AppTheme.textMuted,
+              ),
               const SizedBox(height: 16),
               const Text(
                 'No hay mascotas con estos filtros',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textDark,
+                ),
               ),
               const SizedBox(height: 8),
               const Text(
@@ -110,7 +116,9 @@ class PetGridFeedView extends StatelessWidget {
                       );
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('¡Postulación enviada por ${pet.name}!'),
+                          content: Text(
+                            '¡Postulación enviada por ${pet.name}!',
+                          ),
                           backgroundColor: AppTheme.successGreen,
                         ),
                       );
@@ -169,13 +177,15 @@ class _PetGridCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   Image.network(
-                    pet.photos.isNotEmpty
-                        ? pet.photos.first
-                        : 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80',
+                    pet.photos.isNotEmpty ? pet.photos.first : 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80',
                     fit: BoxFit.cover,
                     errorBuilder: (_, _, _) => Container(
                       color: Colors.grey[200],
-                      child: const Icon(Icons.pets, size: 36, color: Colors.grey),
+                      child: const Icon(
+                        Icons.pets,
+                        size: 36,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
 
@@ -202,7 +212,10 @@ class _PetGridCard extends StatelessWidget {
                     top: 8,
                     left: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green[800]!.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(10),
@@ -210,7 +223,11 @@ class _PetGridCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.auto_awesome, color: Colors.white, size: 10),
+                          const Icon(
+                            Icons.auto_awesome,
+                            color: Colors.white,
+                            size: 10,
+                          ),
                           const SizedBox(width: 3),
                           Text(
                             '$matchPercentage%',
@@ -230,7 +247,10 @@ class _PetGridCard extends StatelessWidget {
                     top: 8,
                     right: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.65),
                         borderRadius: BorderRadius.circular(10),
@@ -238,7 +258,11 @@ class _PetGridCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.location_on, color: Colors.white, size: 10),
+                          const Icon(
+                            Icons.location_on,
+                            color: Colors.white,
+                            size: 10,
+                          ),
                           const SizedBox(width: 2),
                           Text(
                             '${distanceKm.toStringAsFixed(1)} km',
@@ -259,7 +283,10 @@ class _PetGridCard extends StatelessWidget {
                       bottom: 6,
                       left: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.red[700]!.withValues(alpha: 0.95),
                           borderRadius: BorderRadius.circular(6),
@@ -267,11 +294,19 @@ class _PetGridCard extends StatelessWidget {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.warning_amber_rounded, color: Colors.white, size: 9),
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.white,
+                              size: 9,
+                            ),
                             SizedBox(width: 2),
                             Text(
                               'Mudanza',
-                              style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
@@ -282,7 +317,10 @@ class _PetGridCard extends StatelessWidget {
                       bottom: 6,
                       left: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.orange[800]!.withValues(alpha: 0.95),
                           borderRadius: BorderRadius.circular(6),
@@ -290,11 +328,19 @@ class _PetGridCard extends StatelessWidget {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.volunteer_activism, color: Colors.white, size: 9),
+                            Icon(
+                              Icons.volunteer_activism,
+                              color: Colors.white,
+                              size: 9,
+                            ),
                             SizedBox(width: 2),
                             Text(
                               'Camada',
-                              style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
@@ -332,7 +378,9 @@ class _PetGridCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Icon(
                           pet.gender == 'female' ? Icons.female : Icons.male,
-                          color: pet.gender == 'female' ? Colors.pink : Colors.blue,
+                          color: pet.gender == 'female'
+                              ? Colors.pink
+                              : Colors.blue,
                           size: 16,
                         ),
                       ],
@@ -359,7 +407,8 @@ class _PetGridCard extends StatelessWidget {
                             _buildMiniTag('✂ Castrado/a', Colors.teal),
                           if (pet.goodWithKids)
                             _buildMiniTag('👶 Niños', Colors.purple),
-                          if (pet.specialNeeds != null && pet.specialNeeds!.isNotEmpty)
+                          if (pet.specialNeeds != null &&
+                              pet.specialNeeds!.isNotEmpty)
                             _buildMiniTag('🩺 Cuidados', Colors.amber[800]!),
                         ];
 
@@ -379,12 +428,18 @@ class _PetGridCard extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           padding: EdgeInsets.zero,
                           side: const BorderSide(color: AppTheme.primaryColor),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         onPressed: onTap,
                         child: const Text(
                           'Ver Perfil',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
                         ),
                       ),
                     ),

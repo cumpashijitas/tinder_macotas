@@ -1,98 +1,91 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../core/theme/app_theme.dart';
-import '../../models/pet_model.dart';
+import '../../core/services/api_service.dart';
+import '../../models/match_model.dart';
+import '../../models/message_model.dart';
 import '../contract/adoption_contract_screen.dart';
 
-class ChatMessage {
-  final String id;
-  final String text;
-  final bool isMe;
-  final DateTime time;
-  final bool isRead;
-
-  ChatMessage({
-    required this.id,
-    required this.text,
-    required this.isMe,
-    required this.time,
-    this.isRead = true,
-  });
-}
-
 class ChatScreen extends StatefulWidget {
-  final PetModel pet;
-  final String shelterName;
+  final MatchModel match;
 
-  const ChatScreen({
-    super.key,
-    required this.pet,
-    this.shelterName = 'Refugio Patitas Felices',
-  });
+  const ChatScreen({super.key, required this.match});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  final ApiService _api = ApiService();
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  late List<ChatMessage> _messages;
+  List<MessageModel> _messages = [];
+  bool _isLoading = true;
+  bool _isSending = false;
+  RealtimeChannel? _channel;
+
+  String? get _currentUserId => Supabase.instance.client.auth.currentUser?.id;
 
   @override
   void initState() {
     super.initState();
-    _messages = [
-      ChatMessage(
-        id: '1',
-        text: '¡Hola! Vimos tu formulario de adopción para ${widget.pet.name} y nos pareció excelente tu perfil.',
-        isMe: false,
-        time: DateTime.now().subtract(const Duration(minutes: 45)),
-      ),
-      ChatMessage(
-        id: '2',
-        text: 'Notamos que tienes un departamento con red en las ventanas, lo cual es perfecto para su seguridad.',
-        isMe: false,
-        time: DateTime.now().subtract(const Duration(minutes: 42)),
-      ),
-      ChatMessage(
-        id: '3',
-        text: '¡Hola! Qué alegría recibir esta noticia. Estoy muy interesado/a y listo/a para coordinar.',
-        isMe: true,
-        time: DateTime.now().subtract(const Duration(minutes: 25)),
-      ),
-      ChatMessage(
-        id: '4',
-        text: '¿Te parece si agendamos una llamada o visita este fin de semana para que conozcas a ${widget.pet.name} en persona?',
-        isMe: false,
-        time: DateTime.now().subtract(const Duration(minutes: 10)),
-      ),
-    ];
+    _loadMessages();
+    _subscribeRealtime();
   }
 
   @override
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
+    if (_channel != null) {
+      Supabase.instance.client.removeChannel(_channel!);
+    }
     super.dispose();
   }
 
-  void _sendMessage() {
-    final text = _textController.text.trim();
-    if (text.isEmpty) return;
+  Future<void> _loadMessages() async {
+    try {
+      final data = await _api.get('/matches/${widget.match.id}/messages');
+      if (!mounted) return;
+      setState(() {
+        _messages = (data as List<dynamic>)
+            .map((e) => MessageModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+        _isLoading = false;
+      });
+      _scrollToBottom();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
 
-    setState(() {
-      _messages.add(
-        ChatMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          text: text,
-          isMe: true,
-          time: DateTime.now(),
-        ),
-      );
-      _textController.clear();
-    });
+  void _subscribeRealtime() {
+    _channel = Supabase.instance.client
+        .channel('messages-${widget.match.id}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'messages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'match_id',
+            value: widget.match.id,
+          ),
+          callback: (payload) {
+            if (!mounted) return;
+            final incoming = MessageModel.fromJson(payload.newRecord);
+            if (_messages.any((m) => m.id == incoming.id)) return;
+            setState(() => _messages.add(incoming));
+            _scrollToBottom();
+          },
+        )
+        .subscribe();
+  }
 
+  void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -104,8 +97,83 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  Future<void> _sendMessage() async {
+    final text = _textController.text.trim();
+    if (text.isEmpty || _isSending) return;
+
+    setState(() => _isSending = true);
+    _textController.clear();
+
+    try {
+      final data = await _api.post('/matches/${widget.match.id}/messages', {
+        'content': text,
+      });
+      if (!mounted) return;
+      final sent = MessageModel.fromJson(data as Map<String, dynamic>);
+      setState(() {
+        if (!_messages.any((m) => m.id == sent.id)) _messages.add(sent);
+        _isSending = false;
+      });
+      _scrollToBottom();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo enviar el mensaje: $e')),
+      );
+    }
+  }
+
+  Future<void> _scheduleVisit() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: now.add(const Duration(days: 2)),
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 90)),
+    );
+    if (date == null || !mounted) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 16, minute: 0),
+    );
+    if (time == null || !mounted) return;
+
+    final proposedAt = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      await _api.post('/matches/${widget.match.id}/visits', {
+        'proposed_at': proposedAt.toIso8601String(),
+      });
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Propuesta de visita enviada para el ${date.day}/${date.month} a las ${time.format(context)}.',
+          ),
+          backgroundColor: AppTheme.successGreen,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('No se pudo agendar la visita: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final pet = widget.match.pet;
+
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
@@ -114,9 +182,7 @@ class _ChatScreenState extends State<ChatScreen> {
             CircleAvatar(
               radius: 18,
               backgroundImage: NetworkImage(
-                widget.pet.photos.isNotEmpty
-                    ? widget.pet.photos.first
-                    : 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80',
+                (pet != null && pet.photos.isNotEmpty) ? pet.photos.first : 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=800&q=80',
               ),
             ),
             const SizedBox(width: 10),
@@ -125,12 +191,18 @@ class _ChatScreenState extends State<ChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.pet.name,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    pet?.name ?? 'Chat',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(
-                    widget.shelterName,
-                    style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                    widget.match.adopterName ?? widget.match.statusBadgeText,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.textMuted,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -141,64 +213,73 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           IconButton(
             tooltip: 'Ver Contrato de Adopción',
-            icon: const Icon(Icons.description_outlined, color: AppTheme.primaryColor),
+            icon: const Icon(
+              Icons.description_outlined,
+              color: AppTheme.primaryColor,
+            ),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => AdoptionContractScreen(pet: widget.pet),
+                  builder: (_) => AdoptionContractScreen(match: widget.match),
                 ),
               );
             },
           ),
           IconButton(
             tooltip: 'Agendar Visita',
-            icon: const Icon(Icons.event_available_outlined, color: AppTheme.textDark),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Propuesta de visita enviada para este Sábado 16:00 hs.'),
-                  backgroundColor: AppTheme.successGreen,
-                ),
-              );
-            },
+            icon: const Icon(
+              Icons.event_available_outlined,
+              color: AppTheme.textDark,
+            ),
+            onPressed: _scheduleVisit,
           ),
         ],
       ),
       body: Column(
         children: [
-          // Banner de estado de postulación
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: Colors.green[50],
             child: Row(
               children: [
-                const Icon(Icons.verified, color: AppTheme.successGreen, size: 18),
+                const Icon(
+                  Icons.verified,
+                  color: AppTheme.successGreen,
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '¡Match Aprobado! Puedes coordinar la visita y revisar el contrato de adopción.',
-                    style: TextStyle(fontSize: 12, color: Colors.green[900], fontWeight: FontWeight.w600),
+                    widget.match.statusBadgeText,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green[900],
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-
-          // Lista de Mensajes
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final msg = _messages[index];
-                return _buildMessageBubble(msg);
-              },
-            ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _messages.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Todavía no hay mensajes. ¡Escribe el primero!',
+                      style: TextStyle(color: AppTheme.textMuted),
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) =>
+                        _buildMessageBubble(_messages[index]),
+                  ),
           ),
-
-          // Caja de texto inferior
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -214,17 +295,10 @@ class _ChatScreenState extends State<ChatScreen> {
             child: SafeArea(
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.camera_alt_outlined, color: AppTheme.textMuted),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Adjuntar foto de la vivienda...')),
-                      );
-                    },
-                  ),
                   Expanded(
                     child: TextField(
                       controller: _textController,
+                      enabled: !_isSending,
                       decoration: InputDecoration(
                         hintText: 'Escribe un mensaje...',
                         border: OutlineInputBorder(
@@ -233,7 +307,10 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                         filled: true,
                         fillColor: Colors.grey[100],
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                       ),
                       onSubmitted: (_) => _sendMessage(),
                     ),
@@ -242,10 +319,23 @@ class _ChatScreenState extends State<ChatScreen> {
                   CircleAvatar(
                     radius: 22,
                     backgroundColor: AppTheme.primaryColor,
-                    child: IconButton(
-                      icon: const Icon(Icons.send, color: Colors.white, size: 18),
-                      onPressed: _sendMessage,
-                    ),
+                    child: _isSending
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : IconButton(
+                            icon: const Icon(
+                              Icons.send,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            onPressed: _sendMessage,
+                          ),
                   ),
                 ],
               ),
@@ -256,29 +346,34 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage msg) {
+  Widget _buildMessageBubble(MessageModel msg) {
+    final isMe = msg.senderId == _currentUserId;
     return Align(
-      alignment: msg.isMe ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 5),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: msg.isMe ? AppTheme.primaryColor : Colors.grey[200],
+          color: isMe ? AppTheme.primaryColor : Colors.grey[200],
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(msg.isMe ? 18 : 4),
-            bottomRight: Radius.circular(msg.isMe ? 4 : 18),
+            bottomLeft: Radius.circular(isMe ? 18 : 4),
+            bottomRight: Radius.circular(isMe ? 4 : 18),
           ),
         ),
         child: Column(
-          crossAxisAlignment: msg.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isMe
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             Text(
-              msg.text,
+              msg.content,
               style: TextStyle(
-                color: msg.isMe ? Colors.white : AppTheme.textDark,
+                color: isMe ? Colors.white : AppTheme.textDark,
                 fontSize: 14,
                 height: 1.3,
               ),
@@ -288,15 +383,19 @@ class _ChatScreenState extends State<ChatScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${msg.time.hour.toString().padLeft(2, '0')}:${msg.time.minute.toString().padLeft(2, '0')}',
+                  '${msg.createdAt.hour.toString().padLeft(2, '0')}:${msg.createdAt.minute.toString().padLeft(2, '0')}',
                   style: TextStyle(
-                    color: msg.isMe ? Colors.white70 : Colors.black45,
+                    color: isMe ? Colors.white70 : Colors.black45,
                     fontSize: 10,
                   ),
                 ),
-                if (msg.isMe) ...[
+                if (isMe) ...[
                   const SizedBox(width: 4),
-                  const Icon(Icons.done_all, size: 12, color: Colors.white70),
+                  Icon(
+                    msg.isRead ? Icons.done_all : Icons.done,
+                    size: 12,
+                    color: Colors.white70,
+                  ),
                 ],
               ],
             ),

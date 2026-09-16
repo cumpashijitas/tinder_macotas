@@ -124,6 +124,7 @@ export class PetController {
 
         photos: Array.isArray(body.photos) ? body.photos : [],
         status: 'available',
+        moderation_status: 'approved',
       });
 
       ResponseView.success(res, newPet, 'Mascota publicada exitosamente para adopción', 201);
@@ -237,9 +238,57 @@ export class PetController {
 
         photos: Array.isArray(body.photos) ? body.photos : [],
         status: 'available',
+        moderation_status: 'pending',
       });
 
-      ResponseView.success(res, newPet, 'Mascota publicada bajo reubicación responsable', 201);
+      ResponseView.success(
+        res,
+        newPet,
+        'Solicitud de reubicación enviada. Un moderador la revisará antes de publicarla.',
+        201
+      );
+    } catch (err) {
+      ResponseView.internalError(res, err);
+    }
+  }
+
+  /**
+   * Listar mascotas pendientes de moderación (solo admin)
+   */
+  static async getPendingModeration(req: AuthenticatedRequest, res: Response): Promise<void> {
+    if (req.user?.role !== 'admin') {
+      ResponseView.forbidden(res, 'Solo un administrador puede ver la cola de moderación');
+      return;
+    }
+
+    try {
+      const pets = await PetModel.findPendingModeration();
+      ResponseView.success(res, pets, 'Mascotas pendientes de moderación');
+    } catch (err) {
+      ResponseView.internalError(res, err);
+    }
+  }
+
+  /**
+   * Aprobar o rechazar una mascota pendiente de moderación (solo admin)
+   */
+  static async moderatePet(req: AuthenticatedRequest, res: Response): Promise<void> {
+    if (req.user?.role !== 'admin') {
+      ResponseView.forbidden(res, 'Solo un administrador puede moderar publicaciones');
+      return;
+    }
+
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { moderation_status, moderation_notes } = req.body;
+
+    if (!id || !['approved', 'rejected'].includes(moderation_status)) {
+      ResponseView.error(res, 'moderation_status debe ser "approved" o "rejected"', 400);
+      return;
+    }
+
+    try {
+      const updated = await PetModel.moderate(id, moderation_status, moderation_notes);
+      ResponseView.success(res, updated, 'Moderación aplicada correctamente');
     } catch (err) {
       ResponseView.internalError(res, err);
     }

@@ -40,10 +40,14 @@ class CompatibilityService {
         if (pet.species == 'cat') {
           if (adopter.hasProtectiveNetting) {
             score += 15;
-            positives.add('Tu departamento cuenta con red de seguridad para gatos');
+            positives.add(
+              'Tu departamento cuenta con red de seguridad para gatos',
+            );
           } else {
             score -= 20;
-            warnings.add('Se recomienda red en balcones y ventanas para este gatito');
+            warnings.add(
+              'Se recomienda red en balcones y ventanas para este gatito',
+            );
           }
         } else {
           score += 5;
@@ -74,7 +78,9 @@ class CompatibilityService {
         positives.add('Sociable con otros gatos');
       } else if (!pet.goodWithDogs || !pet.goodWithCats) {
         score -= 15;
-        warnings.add('Puede presentar dificultades de socialización con otras mascotas');
+        warnings.add(
+          'Puede presentar dificultades de socialización con otras mascotas',
+        );
       }
     }
 
@@ -90,7 +96,9 @@ class CompatibilityService {
     // 5. Presupuesto y Compromiso
     if (adopter.monthlyBudgetConfirmed && adopter.emergencyFundAvailable) {
       score += 10;
-      positives.add('Cuentas con la solvencia veterinaria que el dador solicita');
+      positives.add(
+        'Cuentas con la solvencia veterinaria que el dador solicita',
+      );
     }
 
     // Asegurar rango 15% - 98%
