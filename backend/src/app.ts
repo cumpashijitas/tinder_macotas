@@ -19,11 +19,10 @@ app.use(
     origin: (origin, callback) => {
       // Sin header Origin (curl, apps móviles, server-to-server): se permite,
       // ya que CORS sólo protege contra el navegador de terceros sitios.
-      if (!origin || ENV.ALLOWED_ORIGINS.includes(origin)) {
-        callback(null, true);
-        return;
-      }
-      callback(new Error(`Origen no permitido por CORS: ${origin}`));
+      // Un origen no permitido simplemente no recibe los headers de CORS
+      // (el navegador bloquea la lectura de la respuesta); no hace falta
+      // cortar la request con un error.
+      callback(null, !origin || ENV.ALLOWED_ORIGINS.includes(origin));
     },
     credentials: true,
   })
