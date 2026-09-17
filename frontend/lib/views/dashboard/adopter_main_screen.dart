@@ -74,8 +74,21 @@ class _AdopterMainScreenState extends State<AdopterMainScreen> {
 // -------------------------------------------------------------
 // TAB 0: EXPLORAR (GRID PINTEREST VS SWIPE TINDER)
 // -------------------------------------------------------------
-class _ExploreTab extends StatelessWidget {
+class _ExploreTab extends StatefulWidget {
   const _ExploreTab();
+
+  @override
+  State<_ExploreTab> createState() => _ExploreTabState();
+}
+
+class _ExploreTabState extends State<_ExploreTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<SwipeController>(context, listen: false).loadFeed();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +119,11 @@ class _ExploreTab extends StatelessWidget {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Actualizar',
+            icon: const Icon(Icons.refresh, color: AppTheme.textDark),
+            onPressed: swipe.isLoading ? null : () => swipe.loadFeed(),
+          ),
           // Conmutador Cuadrícula (Pinterest) vs Swipe (Tinder)
           Container(
             margin: const EdgeInsets.only(right: 6),
@@ -349,7 +367,37 @@ class _ExploreTab extends StatelessWidget {
 
               // Contenido: Cuadrícula o Swipe
               Expanded(
-                child: filter.isGridView
+                child: swipe.isLoading && swipe.pets.isEmpty
+                    ? const Center(child: CircularProgressIndicator())
+                    : swipe.pets.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.pets,
+                                size: 64,
+                                color: AppTheme.textMuted,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                swipe.errorMessage != null
+                                    ? 'No se pudo cargar el feed: ${swipe.errorMessage}'
+                                    : 'Todavía no hay mascotas disponibles.',
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              TextButton(
+                                onPressed: () => swipe.loadFeed(),
+                                child: const Text('Reintentar'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : filter.isGridView
                     ? PetGridFeedView(pets: filteredPets)
                     : _buildSwipeView(context, swipe, filteredPets),
               ),
