@@ -8,6 +8,8 @@ import '../../controllers/swipe_controller.dart';
 import '../shelter/shelter_inventory_screen.dart';
 import '../shelter/shelter_kanban_screen.dart';
 import '../chat/chat_screen.dart';
+import '../history/history_screen.dart';
+import '../profile/edit_profile_dialog.dart';
 
 class ShelterMainScreen extends StatefulWidget {
   const ShelterMainScreen({super.key});
@@ -270,6 +272,11 @@ class _ShelterProfileTabState extends State<_ShelterProfileTab> {
                     fontSize: 14,
                   ),
                 ),
+                TextButton.icon(
+                  icon: const Icon(Icons.edit_outlined, size: 14),
+                  label: const Text('Editar Perfil', style: TextStyle(fontSize: 12)),
+                  onPressed: () => EditProfileDialog.show(context),
+                ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -374,6 +381,21 @@ class _ShelterProfileTabState extends State<_ShelterProfileTab> {
                 ],
               ),
             ),
+          ),
+
+          const SizedBox(height: 12),
+
+          ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(color: Colors.grey[300]!),
+            ),
+            leading: const Icon(Icons.history, color: AppTheme.secondaryColor),
+            title: const Text('Contratos y Visitas', style: TextStyle(fontWeight: FontWeight.w600)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+            },
           ),
 
           const SizedBox(height: 24),

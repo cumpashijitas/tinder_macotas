@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createSupabaseAdminMock, lastBuilderFor } from './helpers/supabaseMock.js';
+import { createSupabaseAdminMock, lastBuilderFor, createQueryBuilderMock } from './helpers/supabaseMock.js';
 
 const mockAdmin = createSupabaseAdminMock();
 
@@ -85,6 +85,84 @@ describe('PetController.relocatePet', () => {
     const insertedPayload = petsBuilder.insert.mock.calls[0][0];
     expect(insertedPayload.moderation_status).toBe('pending');
     expect(insertedPayload.origin).toBe('relinquished');
+  });
+});
+
+describe('PetController.updatePet', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('rechaza si no se envía ningún campo editable', async () => {
+    const req = { user: { id: 'u1' }, params: { id: 'pet-1' }, body: { status: 'adopted' } };
+    const res = mockRes();
+
+    await PetController.updatePet(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('sólo incluye los campos editables permitidos en el patch (ignora status/moderation)', async () => {
+    const req = {
+      user: { id: 'u1' },
+      params: { id: 'pet-1' },
+      body: { name: 'Nuevo Nombre', status: 'adopted', moderation_status: 'rejected', shelter_id: 'otro' },
+    };
+    const res = mockRes();
+
+    await PetController.updatePet(req as never, res as never);
+
+    const petsBuilder = lastBuilderFor(mockAdmin, 'pets');
+    const patch = petsBuilder.update.mock.calls[0][0];
+    expect(patch.name).toBe('Nuevo Nombre');
+    expect(patch.status).toBeUndefined();
+    expect(patch.moderation_status).toBeUndefined();
+    expect(patch.shelter_id).toBeUndefined();
+  });
+
+  it('devuelve 404 si la mascota no existe o no pertenece al usuario', async () => {
+    const req = { user: { id: 'u1' }, params: { id: 'pet-1' }, body: { name: 'X' } };
+    const res = mockRes();
+
+    await PetController.updatePet(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+});
+
+describe('PetController.deletePet', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('bloquea el borrado si la mascota ya tiene matches (409)', async () => {
+    mockAdmin.from.mockImplementationOnce((table: string) => {
+      expect(table).toBe('matches');
+      return createQueryBuilderMock({ data: null, error: null, count: 2 });
+    });
+
+    const req = { user: { id: 'u1' }, params: { id: 'pet-1' } };
+    const res = mockRes();
+
+    await PetController.deletePet(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+  });
+
+  it('elimina la mascota cuando no tiene matches', async () => {
+    mockAdmin.from.mockImplementationOnce((table: string) => {
+      expect(table).toBe('matches');
+      return createQueryBuilderMock({ data: null, error: null, count: 0 });
+    });
+    mockAdmin.from.mockImplementationOnce((table: string) => {
+      expect(table).toBe('pets');
+      return createQueryBuilderMock({ data: null, error: null, count: 1 });
+    });
+
+    const req = { user: { id: 'u1' }, params: { id: 'pet-1' } };
+    const res = mockRes();
+
+    await PetController.deletePet(req as never, res as never);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ success: true })
+    );
   });
 });
 

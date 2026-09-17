@@ -9,6 +9,8 @@ import 'controllers/swipe_controller.dart';
 import 'controllers/pet_filter_controller.dart';
 import 'controllers/adopter_form_controller.dart';
 import 'controllers/matches_controller.dart';
+import 'controllers/notifications_controller.dart';
+import 'controllers/history_controller.dart';
 import 'views/auth/auth_gate.dart';
 
 void main() async {
@@ -30,6 +32,8 @@ class PetMatchApp extends StatelessWidget {
   final PetFilterController? petFilterController;
   final AdopterFormController? adopterFormController;
   final MatchesController? matchesController;
+  final NotificationsController? notificationsController;
+  final HistoryController? historyController;
 
   const PetMatchApp({
     super.key,
@@ -38,6 +42,8 @@ class PetMatchApp extends StatelessWidget {
     this.petFilterController,
     this.adopterFormController,
     this.matchesController,
+    this.notificationsController,
+    this.historyController,
   });
 
   @override
@@ -49,6 +55,10 @@ class PetMatchApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => petFilterController ?? PetFilterController()),
         ChangeNotifierProvider(create: (_) => adopterFormController ?? AdopterFormController()),
         ChangeNotifierProvider(create: (_) => matchesController ?? MatchesController()),
+        ChangeNotifierProvider(
+          create: (_) => notificationsController ?? NotificationsController(),
+        ),
+        ChangeNotifierProvider(create: (_) => historyController ?? HistoryController()),
       ],
       child: MaterialApp(
         title: 'PetMatch - Tinder de Adopción',

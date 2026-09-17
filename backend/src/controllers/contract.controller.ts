@@ -5,6 +5,24 @@ import { ResponseView } from '../views/response.view.js';
 
 export class ContractController {
   /**
+   * Historial consolidado: todos los contratos donde el usuario participa
+   */
+  static async listAll(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const userId = req.user?.id;
+    if (!userId) {
+      ResponseView.unauthorized(res);
+      return;
+    }
+
+    try {
+      const contracts = await ContractModel.listForUser(userId);
+      ResponseView.success(res, contracts, 'Contratos recuperados');
+    } catch (err) {
+      ResponseView.internalError(res, err);
+    }
+  }
+
+  /**
    * Obtener el contrato de un match (si existe)
    */
   static async get(req: AuthenticatedRequest, res: Response): Promise<void> {

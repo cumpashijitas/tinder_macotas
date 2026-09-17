@@ -106,6 +106,79 @@ class SwipeController extends ChangeNotifier {
     }
   }
 
+  /// Edita los datos de una mascota ya publicada. Actualiza la copia en el
+  /// inventario local con la respuesta real del servidor.
+  Future<PetModel?> updatePet(String id, Map<String, dynamic> payload) async {
+    try {
+      final data = await _api.patch('/pets/$id', payload);
+      final updated = PetModel.fromJson(data as Map<String, dynamic>);
+      final index = _inventory.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        _inventory[index] = updated;
+      }
+      notifyListeners();
+      return updated;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
+  /// Elimina una publicación. El backend rechaza el borrado (409) si la
+  /// mascota ya tiene matches, para no perder historial de postulaciones.
+  Future<bool> deletePet(String id) async {
+    try {
+      await _api.delete('/pets/$id');
+      _inventory.removeWhere((p) => p.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Moderación (solo admin): cola de mascotas pendientes de revisión
+  // ---------------------------------------------------------------
+  List<PetModel> _pendingModeration = [];
+  List<PetModel> get pendingModeration => _pendingModeration;
+
+  Future<void> loadPendingModeration() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final data = await _api.get('/pets/pending');
+      _pendingModeration = (data as List<dynamic>)
+          .map((e) => PetModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+      _errorMessage = null;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _pendingModeration = [];
+    }
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<bool> moderatePet(String id, String status, {String? notes}) async {
+    try {
+      await _api.patch('/pets/$id/moderate', {
+        'moderation_status': status,
+        if (notes != null) 'moderation_notes': notes,
+      });
+      _pendingModeration.removeWhere((p) => p.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Postula directamente a una mascota (swipe a la derecha) fuera del deck,
   /// por ejemplo desde la ficha de detalle en la vista de cuadrícula.
   Future<bool> applyToAdopt(PetModel pet) async {

@@ -109,4 +109,86 @@ void main() {
     expect(ok, isTrue);
     expect(pet.status, 'paused');
   });
+
+  group('updatePet', () {
+    test('reemplaza la mascota en el inventario con la respuesta del servidor', () async {
+      when(() => client.get(any(), headers: any(named: 'headers')))
+          .thenAnswer((_) async => jsonResponse([_samplePetJson().toJson()]));
+      await controller.loadInventory();
+
+      final updatedJson = _samplePetJson().toJson()..['name'] = 'Rocky Editado';
+      when(() => client.patch(any(), headers: any(named: 'headers'), body: any(named: 'body')))
+          .thenAnswer((_) async => jsonResponse(updatedJson));
+
+      final updated = await controller.updatePet('pet-1', {'name': 'Rocky Editado'});
+
+      expect(updated?.name, 'Rocky Editado');
+      expect(controller.inventory.single.name, 'Rocky Editado');
+    });
+
+    test('devuelve null y guarda el error si el backend rechaza', () async {
+      when(() => client.patch(any(), headers: any(named: 'headers'), body: any(named: 'body')))
+          .thenAnswer((_) async => errorResponse('No autorizado', statusCode: 403));
+
+      final updated = await controller.updatePet('pet-1', {'name': 'X'});
+
+      expect(updated, isNull);
+      expect(controller.errorMessage, contains('No autorizado'));
+    });
+  });
+
+  group('deletePet', () {
+    test('quita la mascota del inventario en éxito', () async {
+      when(() => client.get(any(), headers: any(named: 'headers')))
+          .thenAnswer((_) async => jsonResponse([_samplePetJson().toJson()]));
+      await controller.loadInventory();
+
+      when(() => client.delete(any(), headers: any(named: 'headers'))).thenAnswer((_) async => jsonResponse(null));
+
+      final ok = await controller.deletePet('pet-1');
+
+      expect(ok, isTrue);
+      expect(controller.inventory, isEmpty);
+    });
+
+    test('mantiene la mascota si el backend rechaza (409, ya tiene matches)', () async {
+      when(() => client.get(any(), headers: any(named: 'headers')))
+          .thenAnswer((_) async => jsonResponse([_samplePetJson().toJson()]));
+      await controller.loadInventory();
+
+      when(() => client.delete(any(), headers: any(named: 'headers')))
+          .thenAnswer((_) async => errorResponse('Ya tiene postulaciones', statusCode: 409));
+
+      final ok = await controller.deletePet('pet-1');
+
+      expect(ok, isFalse);
+      expect(controller.inventory.length, 1);
+      expect(controller.errorMessage, contains('Ya tiene postulaciones'));
+    });
+  });
+
+  group('moderación (admin)', () {
+    test('loadPendingModeration puebla la cola de pendientes', () async {
+      when(() => client.get(any(), headers: any(named: 'headers')))
+          .thenAnswer((_) async => jsonResponse([_samplePetJson().toJson()]));
+
+      await controller.loadPendingModeration();
+
+      expect(controller.pendingModeration.length, 1);
+    });
+
+    test('moderatePet quita la mascota de la cola al aprobar/rechazar', () async {
+      when(() => client.get(any(), headers: any(named: 'headers')))
+          .thenAnswer((_) async => jsonResponse([_samplePetJson().toJson()]));
+      await controller.loadPendingModeration();
+
+      when(() => client.patch(any(), headers: any(named: 'headers'), body: any(named: 'body')))
+          .thenAnswer((_) async => jsonResponse(null));
+
+      final ok = await controller.moderatePet('pet-1', 'approved');
+
+      expect(ok, isTrue);
+      expect(controller.pendingModeration, isEmpty);
+    });
+  });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/auth_controller.dart';
+import '../admin/admin_main_screen.dart';
 import '../dashboard/adopter_main_screen.dart';
 import '../dashboard/shelter_main_screen.dart';
 import 'login_screen.dart';
@@ -25,9 +26,14 @@ class AuthGate extends StatelessWidget {
           );
         }
 
-        return auth.profile!.role == 'adopter'
-            ? const AdopterMainScreen()
-            : const ShelterMainScreen();
+        switch (auth.profile!.role) {
+          case 'admin':
+            return const AdminMainScreen();
+          case 'adopter':
+            return const AdopterMainScreen();
+          default:
+            return const ShelterMainScreen();
+        }
       },
     );
   }

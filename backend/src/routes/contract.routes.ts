@@ -6,6 +6,7 @@ export const contractRouter = Router();
 
 contractRouter.use(authMiddleware);
 
+contractRouter.get('/', ContractController.listAll);
 contractRouter.get('/:matchId', ContractController.get);
 contractRouter.post('/:matchId', ContractController.create);
 contractRouter.post('/:matchId/sign', ContractController.sign);

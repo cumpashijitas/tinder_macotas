@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../config/supabase.js';
+import { NotificationModel } from './notification.model.js';
 
 export interface VisitRecord {
   id: string;
@@ -21,6 +22,21 @@ export class VisitModel {
 
     if (error) throw error;
     return data;
+  }
+
+  /**
+   * Todas las visitas donde el usuario participa (como adoptante o refugio),
+   * para el historial consolidado.
+   */
+  static async listForUser(userId: string): Promise<unknown[]> {
+    const { data, error } = await supabaseAdmin
+      .from('visit_requests')
+      .select('*, matches!inner(*, pets(name, photos))')
+      .or(`adopter_id.eq.${userId},shelter_id.eq.${userId}`, { referencedTable: 'matches' })
+      .order('proposed_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
   }
 
   static async findByMatchId(matchId: string): Promise<VisitRecord[]> {
@@ -58,10 +74,24 @@ export class VisitModel {
       .single();
 
     if (error) throw error;
+
+    const participants = await this.getMatchParticipants(matchId);
+    if (participants) {
+      const otherId = requestedBy === participants.adopter_id ? participants.shelter_id : participants.adopter_id;
+      const dateLabel = new Date(proposedAt).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+      await NotificationModel.create(
+        otherId,
+        'visit',
+        'Nueva propuesta de visita',
+        `Te proponen una visita para el ${dateLabel}.`,
+        matchId
+      );
+    }
+
     return data as VisitRecord;
   }
 
-  static async updateStatus(id: string, status: VisitRecord['status']): Promise<VisitRecord> {
+  static async updateStatus(id: string, status: VisitRecord['status'], actorId: string): Promise<VisitRecord> {
     const { data, error } = await supabaseAdmin
       .from('visit_requests')
       .update({ status, updated_at: new Date().toISOString() })
@@ -70,6 +100,27 @@ export class VisitModel {
       .single();
 
     if (error) throw error;
-    return data as VisitRecord;
+
+    const record = data as VisitRecord;
+    const participants = await this.getMatchParticipants(record.match_id);
+    if (participants) {
+      const otherId = actorId === participants.adopter_id ? participants.shelter_id : participants.adopter_id;
+      const STATUS_LABELS: Record<VisitRecord['status'], string> = {
+        pending: 'pendiente',
+        confirmed: 'confirmada',
+        declined: 'rechazada',
+        completed: 'completada',
+        cancelled: 'cancelada',
+      };
+      await NotificationModel.create(
+        otherId,
+        'visit',
+        'Actualización de visita',
+        `La visita quedó ${STATUS_LABELS[status]}.`,
+        record.match_id
+      );
+    }
+
+    return record;
   }
 }

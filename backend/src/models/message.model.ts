@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../config/supabase.js';
+import { NotificationModel } from './notification.model.js';
 
 export interface MessageRecord {
   id: string;
@@ -10,7 +11,10 @@ export interface MessageRecord {
 }
 
 export class MessageModel {
-  static async isParticipant(matchId: string, userId: string): Promise<{ ok: boolean; status?: string }> {
+  static async isParticipant(
+    matchId: string,
+    userId: string
+  ): Promise<{ ok: boolean; status?: string; adopterId?: string; shelterId?: string }> {
     const { data, error } = await supabaseAdmin
       .from('matches')
       .select('adopter_id, shelter_id, status')
@@ -21,7 +25,7 @@ export class MessageModel {
     if (!data) return { ok: false };
 
     const ok = data.adopter_id === userId || data.shelter_id === userId;
-    return { ok, status: data.status };
+    return { ok, status: data.status, adopterId: data.adopter_id, shelterId: data.shelter_id };
   }
 
   static async findByMatchId(matchId: string): Promise<MessageRecord[]> {
@@ -35,7 +39,12 @@ export class MessageModel {
     return (data || []) as MessageRecord[];
   }
 
-  static async create(matchId: string, senderId: string, content: string): Promise<MessageRecord> {
+  static async create(
+    matchId: string,
+    senderId: string,
+    content: string,
+    recipientId?: string
+  ): Promise<MessageRecord> {
     const { data, error } = await supabaseAdmin
       .from('messages')
       .insert({ match_id: matchId, sender_id: senderId, content, is_read: false })
@@ -43,6 +52,12 @@ export class MessageModel {
       .single();
 
     if (error) throw error;
+
+    if (recipientId) {
+      const preview = content.length > 80 ? `${content.slice(0, 80)}…` : content;
+      await NotificationModel.create(recipientId, 'new_message', 'Nuevo mensaje', preview, matchId);
+    }
+
     return data as MessageRecord;
   }
 

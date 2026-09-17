@@ -10,6 +10,7 @@ import { messageRouter } from './routes/message.routes.js';
 import { visitRouter, visitStatusRouter } from './routes/visit.routes.js';
 import { contractRouter } from './routes/contract.routes.js';
 import { storyRouter } from './routes/story.routes.js';
+import { notificationRouter } from './routes/notification.routes.js';
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use('/api/matches', visitRouter);
 app.use('/api/visits', visitStatusRouter);
 app.use('/api/contracts', contractRouter);
 app.use('/api/stories', storyRouter);
+app.use('/api/notifications', notificationRouter);
 
 // Manejo de rutas inexistentes (404)
 app.use((_req, res) => {

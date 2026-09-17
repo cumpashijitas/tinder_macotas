@@ -53,7 +53,7 @@ export class MessageController {
     }
 
     try {
-      const { ok, status } = await MessageModel.isParticipant(matchId, userId);
+      const { ok, status, adopterId, shelterId } = await MessageModel.isParticipant(matchId, userId);
       if (!ok) {
         ResponseView.forbidden(res, 'No participás de este match');
         return;
@@ -64,7 +64,8 @@ export class MessageController {
         return;
       }
 
-      const message = await MessageModel.create(matchId, userId, content.trim());
+      const recipientId = userId === adopterId ? shelterId : adopterId;
+      const message = await MessageModel.create(matchId, userId, content.trim(), recipientId);
       ResponseView.success(res, message, 'Mensaje enviado', 201);
     } catch (err) {
       ResponseView.internalError(res, err);

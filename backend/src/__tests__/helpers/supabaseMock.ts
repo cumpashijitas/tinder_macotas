@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 export interface MockResult {
   data: unknown;
   error: { message: string } | null;
+  count?: number;
 }
 
 /**

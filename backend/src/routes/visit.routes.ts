@@ -11,4 +11,5 @@ visitRouter.post('/:matchId/visits', VisitController.create);
 
 export const visitStatusRouter = Router();
 visitStatusRouter.use(authMiddleware);
+visitStatusRouter.get('/', VisitController.listAll);
 visitStatusRouter.patch('/:id', VisitController.updateStatus);

@@ -5,6 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/pet_model.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/swipe_controller.dart';
+import '../notifications/notification_bell_button.dart';
 import '../pets/publish_pet_screen.dart';
 import 'shelter_kanban_screen.dart';
 
@@ -66,6 +67,47 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen>
     );
   }
 
+  void _editPet(PetModel pet) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => PublishPetScreen(existingPet: pet)),
+    );
+  }
+
+  Future<void> _deletePet(PetModel pet, SwipeController controller) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Eliminar publicación?'),
+        content: Text('Esto borra a ${pet.name} definitivamente. Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Eliminar', style: TextStyle(color: AppTheme.rejectRed)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await controller.deletePet(pet.id);
+
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? '${pet.name} fue eliminado/a.'
+              : controller.errorMessage ?? 'No se pudo eliminar la publicación.',
+        ),
+        backgroundColor: ok ? AppTheme.successGreen : AppTheme.rejectRed,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final swipeController = Provider.of<SwipeController>(context);
@@ -80,6 +122,7 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inventario del Refugio'),
+        actions: const [NotificationBellButton()],
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
@@ -373,12 +416,29 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen>
                           ),
                           const Spacer(),
                           PopupMenuButton<String>(
-                            tooltip: 'Cambiar Estado',
+                            tooltip: 'Más acciones',
                             icon: const Icon(Icons.more_vert, size: 20),
-                            onSelected: (newStatus) {
-                              _changePetStatus(pet, newStatus, controller);
+                            onSelected: (value) {
+                              if (value == '__edit__') {
+                                _editPet(pet);
+                              } else if (value == '__delete__') {
+                                _deletePet(pet, controller);
+                              } else {
+                                _changePetStatus(pet, value, controller);
+                              }
                             },
                             itemBuilder: (ctx) => [
+                              const PopupMenuItem(
+                                value: '__edit__',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit_outlined, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Editar datos'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuDivider(),
                               if (pet.status != 'available')
                                 const PopupMenuItem(
                                   value: 'available',
@@ -424,6 +484,17 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen>
                                     ],
                                   ),
                                 ),
+                              const PopupMenuDivider(),
+                              const PopupMenuItem(
+                                value: '__delete__',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete_outline, color: AppTheme.rejectRed, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Eliminar', style: TextStyle(color: AppTheme.rejectRed)),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                         ],

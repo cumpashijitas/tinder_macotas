@@ -13,6 +13,24 @@ async function assertParticipant(matchId: string, userId: string): Promise<boole
 
 export class VisitController {
   /**
+   * Historial consolidado: todas las visitas donde el usuario participa
+   */
+  static async listAll(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const userId = req.user?.id;
+    if (!userId) {
+      ResponseView.unauthorized(res);
+      return;
+    }
+
+    try {
+      const visits = await VisitModel.listForUser(userId);
+      ResponseView.success(res, visits, 'Visitas recuperadas');
+    } catch (err) {
+      ResponseView.internalError(res, err);
+    }
+  }
+
+  /**
    * Listar solicitudes de visita de un match
    */
   static async list(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -98,7 +116,7 @@ export class VisitController {
         return;
       }
 
-      const updated = await VisitModel.updateStatus(id, status);
+      const updated = await VisitModel.updateStatus(id, status, userId);
       ResponseView.success(res, updated, 'Estado de la visita actualizado');
     } catch (err) {
       ResponseView.internalError(res, err);

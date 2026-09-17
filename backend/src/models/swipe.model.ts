@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../config/supabase.js';
+import { NotificationModel } from './notification.model.js';
 
 export interface SwipeRecord {
   id: string;
@@ -34,10 +35,10 @@ export class SwipeModel {
 
     // 2. Si el swipe fue a la derecha o superlike, se genera la postulación/match
     if (direction === 'right' || direction === 'superlike') {
-      // Obtener el shelter_id de la mascota
+      // Obtener el shelter_id y nombre de la mascota
       const { data: pet, error: petError } = await supabaseAdmin
         .from('pets')
-        .select('shelter_id')
+        .select('shelter_id, name')
         .eq('id', petId)
         .single();
 
@@ -56,6 +57,13 @@ export class SwipeModel {
 
         if (!matchError) {
           matchCreated = true;
+          await NotificationModel.create(
+            pet.shelter_id,
+            'new_match',
+            'Nueva postulación recibida',
+            `Alguien se postuló para adoptar a ${pet.name}.`,
+            petId
+          );
         }
       }
     }

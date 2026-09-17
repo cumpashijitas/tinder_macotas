@@ -17,6 +17,9 @@ import '../chat/chat_screen.dart';
 import '../onboarding_form/adoption_wizard_screen.dart';
 import '../relocation/relocation_request_screen.dart';
 import '../community/happy_tails_screen.dart';
+import '../history/history_screen.dart';
+import '../notifications/notification_bell_button.dart';
+import '../profile/edit_profile_dialog.dart';
 
 class AdopterMainScreen extends StatefulWidget {
   const AdopterMainScreen({super.key});
@@ -129,6 +132,7 @@ class _ExploreTabState extends State<_ExploreTab> {
           ],
         ),
         actions: [
+          const NotificationBellButton(),
           IconButton(
             tooltip: 'Actualizar',
             icon: const Icon(Icons.refresh, color: AppTheme.textDark),
@@ -778,7 +782,11 @@ class _AdopterProfileTabState extends State<_AdopterProfileTab> {
                         fontSize: 13,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    TextButton.icon(
+                      icon: const Icon(Icons.edit_outlined, size: 14),
+                      label: const Text('Editar Perfil', style: TextStyle(fontSize: 12)),
+                      onPressed: () => EditProfileDialog.show(context),
+                    ),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -911,6 +919,21 @@ class _AdopterProfileTabState extends State<_AdopterProfileTab> {
                     ],
                   ),
                 ),
+              ),
+
+              const SizedBox(height: 12),
+
+              ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: BorderSide(color: Colors.grey[300]!),
+                ),
+                leading: const Icon(Icons.history, color: AppTheme.primaryColor),
+                title: const Text('Contratos y Visitas', style: TextStyle(fontWeight: FontWeight.w600)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+                },
               ),
 
               const SizedBox(height: 20),

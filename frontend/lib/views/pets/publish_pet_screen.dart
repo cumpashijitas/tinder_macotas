@@ -6,9 +6,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/swipe_controller.dart';
+import '../../models/pet_model.dart';
 
 class PublishPetScreen extends StatefulWidget {
-  const PublishPetScreen({super.key});
+  /// Cuando se pasa una mascota existente, la pantalla entra en modo edición:
+  /// prellena todos los campos y al guardar hace PATCH en vez de POST.
+  final PetModel? existingPet;
+
+  const PublishPetScreen({super.key, this.existingPet});
+
+  bool get isEditing => existingPet != null;
 
   @override
   State<PublishPetScreen> createState() => _PublishPetScreenState();
@@ -60,6 +67,48 @@ class _PublishPetScreenState extends State<PublishPetScreen> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    final pet = widget.existingPet;
+    if (pet == null) return;
+
+    _species = pet.species;
+    _nameController.text = pet.name;
+    _breedController.text = pet.breed;
+    _gender = pet.gender;
+    _ageYears = pet.ageYears;
+    _size = pet.size;
+    _origin = pet.origin;
+    _isLitter = pet.isLitter;
+    _weaningCompleted = pet.weaningCompleted;
+
+    _isVaccinated = pet.isVaccinated;
+    _selectedVaccines
+      ..clear()
+      ..addAll(pet.vaccinesApplied);
+    _dewormedInternal = pet.dewormedInternal;
+    _dewormedExternal = pet.dewormedExternal;
+    _hasMicrochip = pet.hasMicrochip;
+    _reproductiveStatus = pet.reproductiveStatus;
+    _specialNeedsController.text = pet.specialNeeds ?? '';
+
+    _houseTrained = pet.houseTrained;
+    _goodWithDogs = pet.goodWithDogs;
+    _goodWithCats = pet.goodWithCats;
+    _goodWithKids = pet.goodWithKids;
+    _requiresYard = pet.requiresYard;
+    _energyLevel = pet.energyLevel;
+    _stormAnxiety = pet.stormAnxiety;
+
+    _storyController.text = pet.story;
+    _photoUrlController.text = pet.photos.isNotEmpty ? pet.photos.first : '';
+    _requiresContract = pet.requiresAdoptionContract;
+    _requiresHomeCheck = pet.requiresHomeCheck;
+    _requiresFollowupPhotos = pet.requiresFollowupPhotos;
+    _deliveryType = pet.deliveryType;
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _breedController.dispose();
@@ -74,7 +123,9 @@ class _PublishPetScreenState extends State<PublishPetScreen> {
     final authController = Provider.of<AuthController>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Publicar Mascota en Adopción')),
+      appBar: AppBar(
+        title: Text(widget.isEditing ? 'Editar Mascota' : 'Publicar Mascota en Adopción'),
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -171,7 +222,7 @@ class _PublishPetScreenState extends State<PublishPetScreen> {
                                 )
                               : Text(
                                   _currentStep == 3
-                                      ? 'Publicar Mascota'
+                                      ? (widget.isEditing ? 'Guardar Cambios' : 'Publicar Mascota')
                                       : 'Siguiente',
                                 ),
                         ),
@@ -914,7 +965,9 @@ class _PublishPetScreenState extends State<PublishPetScreen> {
         'longitude': authController.profile!.longitude,
     };
 
-    final newPet = await swipeController.publishPet(payload);
+    final newPet = widget.isEditing
+        ? await swipeController.updatePet(widget.existingPet!.id, payload)
+        : await swipeController.publishPet(payload);
 
     if (!mounted) return;
     setState(() => _isSubmitting = false);
@@ -923,7 +976,8 @@ class _PublishPetScreenState extends State<PublishPetScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            swipeController.errorMessage ?? 'No se pudo publicar la mascota',
+            swipeController.errorMessage ??
+                (widget.isEditing ? 'No se pudieron guardar los cambios' : 'No se pudo publicar la mascota'),
           ),
           backgroundColor: AppTheme.rejectRed,
         ),
@@ -934,7 +988,9 @@ class _PublishPetScreenState extends State<PublishPetScreen> {
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          '¡${newPet.name} ha sido publicado/a exitosamente en PetMatch!',
+          widget.isEditing
+              ? 'Los datos de ${newPet.name} se actualizaron correctamente.'
+              : '¡${newPet.name} ha sido publicado/a exitosamente en PetMatch!',
         ),
         backgroundColor: AppTheme.successGreen,
       ),

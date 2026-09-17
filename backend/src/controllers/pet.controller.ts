@@ -180,6 +180,89 @@ export class PetController {
   }
 
   /**
+   * Editar los datos de una mascota ya publicada (sólo el propio publicador)
+   */
+  static async updatePet(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const userId = req.user?.id;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+    if (!userId || !id) {
+      ResponseView.error(res, 'ID y usuario requeridos', 400);
+      return;
+    }
+
+    const body = req.body;
+    const editableFields = [
+      'name', 'species', 'breed', 'age_years', 'gender', 'size', 'energy_level',
+      'is_litter', 'birth_date', 'weaning_completed',
+      'is_vaccinated', 'vaccines_applied', 'dewormed_internal', 'dewormed_external',
+      'has_microchip', 'is_neutered', 'reproductive_status',
+      'house_trained', 'good_with_dogs', 'good_with_cats', 'good_with_kids',
+      'requires_yard', 'storm_anxiety', 'special_needs', 'story',
+      'requires_adoption_contract', 'requires_home_check', 'requires_followup_photos',
+      'delivery_type', 'photos', 'latitude', 'longitude',
+    ] as const;
+
+    const patch: Record<string, unknown> = {};
+    for (const field of editableFields) {
+      if (body[field] !== undefined) {
+        patch[field] = body[field];
+      }
+    }
+
+    if (Object.keys(patch).length === 0) {
+      ResponseView.error(res, 'No se enviaron campos para actualizar', 400);
+      return;
+    }
+
+    try {
+      const updated = await PetModel.update(id, userId, patch as never);
+      if (!updated) {
+        ResponseView.notFound(res, 'Mascota no encontrada o no te pertenece');
+        return;
+      }
+      ResponseView.success(res, updated, 'Mascota actualizada correctamente');
+    } catch (err) {
+      ResponseView.internalError(res, err);
+    }
+  }
+
+  /**
+   * Eliminar una publicación. Se bloquea si ya tiene matches, para no borrar
+   * historial de postulaciones en curso; en ese caso conviene pausarla.
+   */
+  static async deletePet(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const userId = req.user?.id;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+    if (!userId || !id) {
+      ResponseView.error(res, 'ID y usuario requeridos', 400);
+      return;
+    }
+
+    try {
+      const matchCount = await PetModel.countMatches(id);
+      if (matchCount > 0) {
+        ResponseView.error(
+          res,
+          'No se puede eliminar: esta mascota ya tiene postulaciones o matches. Podés pausarla en su lugar.',
+          409
+        );
+        return;
+      }
+
+      const deleted = await PetModel.delete(id, userId);
+      if (!deleted) {
+        ResponseView.notFound(res, 'Mascota no encontrada o no te pertenece');
+        return;
+      }
+      ResponseView.success(res, null, 'Mascota eliminada correctamente');
+    } catch (err) {
+      ResponseView.internalError(res, err);
+    }
+  }
+
+  /**
    * Caso Excepcional: Adoptante que debe reubicar a su mascota por mudanza o fuerza mayor
    */
   static async relocatePet(req: AuthenticatedRequest, res: Response): Promise<void> {

@@ -1,4 +1,13 @@
 import { supabaseAdmin } from '../config/supabase.js';
+import { NotificationModel } from './notification.model.js';
+
+const STATUS_LABELS: Record<MatchRecord['status'], string> = {
+  pending_review: 'en revisión',
+  approved_for_chat: 'aprobada: ¡ya podés chatear!',
+  interview_scheduled: 'con visita/entrevista programada',
+  rejected: 'no aprobada en esta ocasión',
+  adoption_finalized: '¡adopción concretada! 🎉',
+};
 
 export interface MatchRecord {
   id: string;
@@ -56,10 +65,21 @@ export class MatchModel {
       })
       .eq('id', matchId)
       .eq('shelter_id', shelterId)
-      .select()
+      .select('*, pets(*)')
       .single();
 
     if (error) throw error;
-    return data as MatchRecord;
+
+    const record = data as MatchRecord & { pets?: { name?: string } };
+    const petName = record.pets?.name || 'la mascota';
+    await NotificationModel.create(
+      record.adopter_id,
+      'match_status',
+      `Tu solicitud por ${petName} fue actualizada`,
+      `Tu postulación quedó ${STATUS_LABELS[status]}.`,
+      matchId
+    );
+
+    return record as MatchRecord;
   }
 }

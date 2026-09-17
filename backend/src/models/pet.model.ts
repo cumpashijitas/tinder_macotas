@@ -141,6 +141,57 @@ export class PetModel {
     return data as PetRecord;
   }
 
+  /**
+   * Edita los datos de una mascota publicada (sólo el propio publicador).
+   * No permite cambiar campos administrativos (status, moderación, dueño).
+   */
+  static async update(
+    id: string,
+    shelterId: string,
+    patch: Partial<
+      Omit<
+        PetRecord,
+        'id' | 'shelter_id' | 'publisher_type' | 'status' | 'moderation_status' | 'moderation_notes' | 'created_at' | 'updated_at'
+      >
+    >
+  ): Promise<PetRecord | null> {
+    const { data, error } = await supabaseAdmin
+      .from('pets')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('shelter_id', shelterId)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+    return data as PetRecord | null;
+  }
+
+  /**
+   * Cuenta cuántos matches tiene una mascota (para bloquear el borrado si ya
+   * hay postulantes con historial en curso, evitando pérdida de datos).
+   */
+  static async countMatches(id: string): Promise<number> {
+    const { count, error } = await supabaseAdmin
+      .from('matches')
+      .select('id', { count: 'exact', head: true })
+      .eq('pet_id', id);
+
+    if (error) throw error;
+    return count || 0;
+  }
+
+  static async delete(id: string, shelterId: string): Promise<boolean> {
+    const { error, count } = await supabaseAdmin
+      .from('pets')
+      .delete({ count: 'exact' })
+      .eq('id', id)
+      .eq('shelter_id', shelterId);
+
+    if (error) throw error;
+    return (count || 0) > 0;
+  }
+
   static async findByShelterId(shelterId: string): Promise<PetRecord[]> {
     const { data, error } = await supabaseAdmin
       .from('pets')
