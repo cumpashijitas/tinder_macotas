@@ -37,4 +37,25 @@ describe('App HTTP básico', () => {
     const res = await request(app).post('/api/auth/otp').send({});
     expect(res.status).toBe(400);
   });
+
+  it('CORS: refleja el origen para un dominio permitido', async () => {
+    const res = await request(app)
+      .get('/health')
+      .set('Origin', 'https://frontend-six-wheat-83.vercel.app');
+
+    expect(res.headers['access-control-allow-origin']).toBe(
+      'https://frontend-six-wheat-83.vercel.app'
+    );
+  });
+
+  it('CORS: rechaza un origen no permitido', async () => {
+    const res = await request(app).get('/health').set('Origin', 'https://sitio-malicioso.com');
+
+    expect(res.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  it('CORS: sin header Origin (curl, apps móviles) igual responde con éxito', async () => {
+    const res = await request(app).get('/health');
+    expect(res.status).toBe(200);
+  });
 });

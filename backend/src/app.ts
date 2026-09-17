@@ -14,7 +14,20 @@ import { storyRouter } from './routes/story.routes.js';
 const app = express();
 
 // Middlewares globales
-app.use(cors());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Sin header Origin (curl, apps móviles, server-to-server): se permite,
+      // ya que CORS sólo protege contra el navegador de terceros sitios.
+      if (!origin || ENV.ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`Origen no permitido por CORS: ${origin}`));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Endpoint de salud
