@@ -7,6 +7,8 @@ class ProfileModel {
   final String? avatarUrl;
   final String? address;
   final bool isVerified;
+  final double? latitude;
+  final double? longitude;
 
   ProfileModel({
     required this.id,
@@ -17,6 +19,8 @@ class ProfileModel {
     this.avatarUrl,
     this.address,
     this.isVerified = false,
+    this.latitude,
+    this.longitude,
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
@@ -29,8 +33,12 @@ class ProfileModel {
       avatarUrl: json['avatar_url'] as String?,
       address: json['address'] as String?,
       isVerified: json['is_verified'] as bool? ?? false,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
     );
   }
+
+  bool get hasLocation => latitude != null && longitude != null;
 
   String get roleTitle {
     switch (role) {

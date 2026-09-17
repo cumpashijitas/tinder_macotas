@@ -8,12 +8,14 @@ import '../../../services/compatibility_service.dart';
 class PetCardWidget extends StatelessWidget {
   final PetModel pet;
   final AdopterFormModel? adopterProfile;
+  final double? distanceKm;
   final VoidCallback? onInfoTap;
 
   const PetCardWidget({
     super.key,
     required this.pet,
     this.adopterProfile,
+    this.distanceKm,
     this.onInfoTap,
   });
 
@@ -30,9 +32,6 @@ class PetCardWidget extends StatelessWidget {
       adopter: adopterProfile ?? AdopterFormModel(),
       pet: pet,
     );
-
-    // Distancia simulada basada en el ID para demostración realista
-    final distanceKm = ((pet.id.hashCode.abs() % 15) + 1.2).toStringAsFixed(1);
 
     return Container(
       decoration: BoxDecoration(
@@ -223,26 +222,27 @@ class PetCardWidget extends StatelessWidget {
 
                   const SizedBox(height: 6),
 
-                  // Distancia estimada
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 14,
-                        color: Colors.white70,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'A $distanceKm km de tu ubicación',
-                        style: const TextStyle(
+                  // Distancia real (sólo si conocemos la ubicación de ambos lados)
+                  if (distanceKm != null) ...[
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 14,
                           color: Colors.white70,
-                          fontSize: 12,
                         ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 8),
+                        const SizedBox(width: 4),
+                        Text(
+                          'A ${distanceKm!.toStringAsFixed(1)} km de tu ubicación',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
 
                   // Insignias de Sexo, Raza y Reproducción
                   Wrap(

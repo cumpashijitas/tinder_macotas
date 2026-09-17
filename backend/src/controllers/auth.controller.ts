@@ -73,7 +73,7 @@ export class AuthController {
       return;
     }
 
-    const { full_name, role, phone, organization_name, address, avatar_url } = req.body;
+    const { full_name, role, phone, organization_name, address, avatar_url, latitude, longitude } = req.body;
 
     if (!full_name || typeof full_name !== 'string' || full_name.trim().length < 2) {
       ResponseView.error(res, 'El nombre completo es requerido (mínimo 2 caracteres)', 400);
@@ -84,6 +84,14 @@ export class AuthController {
     if (!role || !allowedRoles.includes(role)) {
       ResponseView.error(res, 'Rol inválido. Debe ser adopter, shelter o individual_rescuer', 400);
       return;
+    }
+
+    // La ubicación sólo se toca si vino explícitamente en el body, para no
+    // pisar con null una ubicación ya guardada en una edición que no la envía.
+    const locationPatch: Record<string, number> = {};
+    if (typeof latitude === 'number' && typeof longitude === 'number') {
+      locationPatch.latitude = latitude;
+      locationPatch.longitude = longitude;
     }
 
     try {
@@ -98,6 +106,7 @@ export class AuthController {
             organization_name: organization_name || null,
             address: address || null,
             avatar_url: avatar_url || null,
+            ...locationPatch,
           },
           { onConflict: 'id' }
         )

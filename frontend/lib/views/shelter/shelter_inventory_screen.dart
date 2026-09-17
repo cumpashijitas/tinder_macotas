@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../models/pet_model.dart';
+import '../../controllers/auth_controller.dart';
 import '../../controllers/swipe_controller.dart';
 import '../pets/publish_pet_screen.dart';
 import 'shelter_kanban_screen.dart';
@@ -25,6 +26,7 @@ class _ShelterInventoryScreenState extends State<ShelterInventoryScreen>
     _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<SwipeController>(context, listen: false).loadInventory();
+      Provider.of<AuthController>(context, listen: false).ensureLocationCaptured();
     });
   }
 

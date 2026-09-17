@@ -125,6 +125,8 @@ export class PetController {
         photos: Array.isArray(body.photos) ? body.photos : [],
         status: 'available',
         moderation_status: 'approved',
+        latitude: typeof body.latitude === 'number' ? body.latitude : null,
+        longitude: typeof body.longitude === 'number' ? body.longitude : null,
       });
 
       ResponseView.success(res, newPet, 'Mascota publicada exitosamente para adopción', 201);
@@ -239,6 +241,8 @@ export class PetController {
         photos: Array.isArray(body.photos) ? body.photos : [],
         status: 'available',
         moderation_status: 'pending',
+        latitude: typeof body.latitude === 'number' ? body.latitude : null,
+        longitude: typeof body.longitude === 'number' ? body.longitude : null,
       });
 
       ResponseView.success(

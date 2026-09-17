@@ -46,6 +46,8 @@ class PetModel {
   final String? relocationReason;
   final String moderationStatus; // 'pending' | 'approved' | 'rejected'
   final String? moderationNotes;
+  final double? latitude;
+  final double? longitude;
 
   PetModel({
     required this.id,
@@ -85,6 +87,8 @@ class PetModel {
     this.relocationReason,
     this.moderationStatus = 'approved',
     this.moderationNotes,
+    this.latitude,
+    this.longitude,
   });
 
   factory PetModel.fromJson(Map<String, dynamic> json) {
@@ -144,6 +148,8 @@ class PetModel {
       relocationReason: json['relocation_reason'] as String?,
       moderationStatus: json['moderation_status'] as String? ?? 'approved',
       moderationNotes: json['moderation_notes'] as String?,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
     );
   }
 

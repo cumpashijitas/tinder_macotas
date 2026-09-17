@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../models/pet_model.dart';
-import '../../models/adopter_form_model.dart';
 import '../../services/compatibility_service.dart';
+import '../../controllers/adopter_form_controller.dart';
 import '../../controllers/pet_filter_controller.dart';
 import '../../controllers/swipe_controller.dart';
 import 'widgets/pet_detail_sheet.dart';
@@ -19,6 +19,10 @@ class PetGridFeedView extends StatelessWidget {
   Widget build(BuildContext context) {
     final filter = Provider.of<PetFilterController>(context);
     final swipe = Provider.of<SwipeController>(context, listen: false);
+    final adopterForm = Provider.of<AdopterFormController>(
+      context,
+      listen: false,
+    ).form;
 
     if (pets.isEmpty) {
       return Center(
@@ -94,9 +98,9 @@ class PetGridFeedView extends StatelessWidget {
               ),
               itemBuilder: (context, index) {
                 final pet = pets[index];
-                final distanceKm = filter.getPetDistanceKm(pet.id);
+                final distanceKm = filter.getPetDistanceKm(pet);
                 final matchResult = CompatibilityService.calculateMatch(
-                  adopter: AdopterFormModel(),
+                  adopter: adopterForm,
                   pet: pet,
                 );
 
@@ -136,7 +140,7 @@ class PetGridFeedView extends StatelessWidget {
 
 class _PetGridCard extends StatelessWidget {
   final PetModel pet;
-  final double distanceKm;
+  final double? distanceKm;
   final int matchPercentage;
   final VoidCallback onTap;
 
@@ -242,40 +246,41 @@ class _PetGridCard extends StatelessWidget {
                     ),
                   ),
 
-                  // Badge de Distancia (km)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.65),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.location_on,
-                            color: Colors.white,
-                            size: 10,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${distanceKm.toStringAsFixed(1)} km',
-                            style: const TextStyle(
+                  // Badge de Distancia (km) — sólo si tenemos ubicación real de ambos lados
+                  if (distanceKm != null)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.65),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.location_on,
                               color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
+                              size: 10,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 2),
+                            Text(
+                              '${distanceKm!.toStringAsFixed(1)} km',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
 
                   // Badge de Reubicación si aplica
                   if (isRelocated)

@@ -85,8 +85,18 @@ class _ExploreTabState extends State<_ExploreTab> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<SwipeController>(context, listen: false).loadFeed();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final swipe = Provider.of<SwipeController>(context, listen: false);
+      final auth = Provider.of<AuthController>(context, listen: false);
+      final filter = Provider.of<PetFilterController>(context, listen: false);
+
+      swipe.loadFeed();
+      filter.setAdopterLocation(auth.profile?.latitude, auth.profile?.longitude);
+
+      await auth.ensureLocationCaptured();
+      if (!mounted) return;
+      filter.setAdopterLocation(auth.profile?.latitude, auth.profile?.longitude);
     });
   }
 
@@ -492,9 +502,14 @@ class _ExploreTabState extends State<_ExploreTab> {
                   padding: const EdgeInsets.all(4.0),
                   cardBuilder: (context, index, percentX, percentY) {
                     final pet = filteredPets[index];
+                    final distanceKm = Provider.of<PetFilterController>(
+                      context,
+                      listen: false,
+                    ).getPetDistanceKm(pet);
                     return PetCardWidget(
                       pet: pet,
                       adopterProfile: adopterForm,
+                      distanceKm: distanceKm,
                       onInfoTap: () => PetDetailSheet.show(context, pet),
                     );
                   },

@@ -843,6 +843,10 @@ class _PublishPetScreenState extends State<PublishPetScreen> {
       context,
       listen: false,
     );
+    final authController = Provider.of<AuthController>(
+      context,
+      listen: false,
+    );
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
@@ -904,6 +908,10 @@ class _PublishPetScreenState extends State<PublishPetScreen> {
       'requires_followup_photos': _requiresFollowupPhotos,
       'delivery_type': _deliveryType,
       'photos': [photoUrl],
+      if (authController.profile?.latitude != null)
+        'latitude': authController.profile!.latitude,
+      if (authController.profile?.longitude != null)
+        'longitude': authController.profile!.longitude,
     };
 
     final newPet = await swipeController.publishPet(payload);

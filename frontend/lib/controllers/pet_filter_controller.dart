@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../models/pet_model.dart';
@@ -6,6 +8,8 @@ class PetFilterController extends ChangeNotifier {
   bool _isGridView = true;
   String _searchQuery = '';
   double _maxDistanceKm = 50.0;
+  double? _adopterLat;
+  double? _adopterLng;
   final Set<String> _selectedAgeStages =
       {}; // 'puppy', 'young', 'adult', 'senior'
   final Set<String> _selectedSizes = {}; // 'small', 'medium', 'large', 'giant'
@@ -73,6 +77,17 @@ class PetFilterController extends ChangeNotifier {
     _maxDistanceKm = km;
     notifyListeners();
   }
+
+  /// Ubicación real del adoptante (capturada vía geolocalización). Sin ella,
+  /// no se puede calcular distancia real: el filtro de distancia se ignora
+  /// y la insignia de "X km" simplemente no se muestra (nada inventado).
+  void setAdopterLocation(double? lat, double? lng) {
+    _adopterLat = lat;
+    _adopterLng = lng;
+    notifyListeners();
+  }
+
+  bool get hasAdopterLocation => _adopterLat != null && _adopterLng != null;
 
   void toggleAgeStage(String stage) {
     if (_selectedAgeStages.contains(stage)) {
@@ -154,10 +169,31 @@ class PetFilterController extends ChangeNotifier {
     notifyListeners();
   }
 
-  double getPetDistanceKm(String petId) {
-    final code = petId.codeUnits.fold<int>(0, (prev, elem) => prev + elem);
-    return ((code * 17) % 350 + 12) / 10.0; // Generates 1.2 km to 36.2 km
+  /// Distancia real en km entre el adoptante y la mascota (fórmula de
+  /// Haversine). Devuelve null si falta la ubicación de alguna de las dos
+  /// partes — en ese caso la UI debe ocultar el dato en vez de inventarlo.
+  double? getPetDistanceKm(PetModel pet) {
+    if (_adopterLat == null ||
+        _adopterLng == null ||
+        pet.latitude == null ||
+        pet.longitude == null) {
+      return null;
+    }
+
+    const earthRadiusKm = 6371.0;
+    final dLat = _toRadians(pet.latitude! - _adopterLat!);
+    final dLng = _toRadians(pet.longitude! - _adopterLng!);
+    final a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_toRadians(_adopterLat!)) *
+            math.cos(_toRadians(pet.latitude!)) *
+            math.sin(dLng / 2) *
+            math.sin(dLng / 2);
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return earthRadiusKm * c;
   }
+
+  double _toRadians(double degrees) => degrees * (math.pi / 180.0);
 
   List<PetModel> applyFilters(List<PetModel> pets) {
     return pets.where((pet) {
@@ -187,9 +223,9 @@ class PetFilterController extends ChangeNotifier {
         }
       }
 
-      // Distancia máxima
-      final distance = getPetDistanceKm(pet.id);
-      if (distance > _maxDistanceKm) {
+      // Distancia máxima (sólo filtra si conocemos la distancia real de ambos lados)
+      final distance = getPetDistanceKm(pet);
+      if (distance != null && distance > _maxDistanceKm) {
         return false;
       }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -220,6 +221,8 @@ class AuthController extends ChangeNotifier {
     String? phone,
     String? address,
     String? organizationName,
+    double? latitude,
+    double? longitude,
   }) async {
     if (_profile == null) return false;
     try {
@@ -229,6 +232,8 @@ class AuthController extends ChangeNotifier {
         'phone': phone ?? _profile!.phone,
         'address': address ?? _profile!.address,
         'organization_name': organizationName ?? _profile!.organizationName,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
       });
       _profile = ProfileModel.fromJson(updated as Map<String, dynamic>);
       notifyListeners();
@@ -237,6 +242,42 @@ class AuthController extends ChangeNotifier {
       _errorMessage = e.toString();
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Intenta capturar la ubicación real del dispositivo una sola vez (si el
+  /// perfil todavía no tiene una guardada) y la persiste. Silenciosa ante
+  /// cualquier error (permiso denegado, GPS apagado, plataforma sin soporte):
+  /// las funciones de distancia simplemente quedan ocultas si no hay ubicación.
+  Future<void> ensureLocationCaptured() async {
+    if (_profile == null || _profile!.hasLocation) return;
+
+    try {
+      final permission = await Geolocator.checkPermission();
+      LocationPermission granted = permission;
+      if (granted == LocationPermission.denied) {
+        granted = await Geolocator.requestPermission();
+      }
+      if (granted == LocationPermission.denied ||
+          granted == LocationPermission.deniedForever) {
+        return;
+      }
+
+      if (!await Geolocator.isLocationServiceEnabled()) return;
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+
+      await updateProfile(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+    } catch (_) {
+      // Ubicación no disponible; se sigue funcionando sin distancia real.
     }
   }
 

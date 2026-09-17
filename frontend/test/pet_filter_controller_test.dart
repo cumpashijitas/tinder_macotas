@@ -153,4 +153,80 @@ void main() {
       expect(filterController.isGridView, isTrue);
     });
   });
+
+  group('Distancia real (Haversine)', () {
+    late PetFilterController controller;
+
+    PetModel petAt(double? lat, double? lng) => PetModel(
+      id: 'p-$lat-$lng',
+      shelterId: 's1',
+      name: 'Test',
+      species: 'dog',
+      breed: 'Mestizo',
+      ageYears: 1.0,
+      gender: 'male',
+      size: 'medium',
+      energyLevel: 3,
+      isVaccinated: true,
+      isNeutered: true,
+      goodWithDogs: true,
+      goodWithCats: true,
+      goodWithKids: true,
+      requiresYard: false,
+      story: 'Test',
+      photos: const [],
+      status: 'available',
+      latitude: lat,
+      longitude: lng,
+    );
+
+    setUp(() => controller = PetFilterController());
+
+    test('sin ubicación del adoptante, la distancia es null (no se inventa)', () {
+      final pet = petAt(-34.6, -58.4);
+      expect(controller.getPetDistanceKm(pet), isNull);
+    });
+
+    test('sin ubicación de la mascota, la distancia es null', () {
+      controller.setAdopterLocation(-34.6, -58.4);
+      final pet = petAt(null, null);
+      expect(controller.getPetDistanceKm(pet), isNull);
+    });
+
+    test('con ambas ubicaciones, calcula la distancia real en km (Buenos Aires -> Córdoba ~ 650km)', () {
+      controller.setAdopterLocation(-34.6037, -58.3816); // CABA
+      final pet = petAt(-31.4201, -64.1888); // Córdoba
+      final distance = controller.getPetDistanceKm(pet);
+
+      expect(distance, isNotNull);
+      expect(distance, greaterThan(600));
+      expect(distance, lessThan(700));
+    });
+
+    test('la misma ubicación da distancia ~0', () {
+      controller.setAdopterLocation(-34.6037, -58.3816);
+      final pet = petAt(-34.6037, -58.3816);
+      expect(controller.getPetDistanceKm(pet), closeTo(0, 0.01));
+    });
+
+    test('el filtro de distancia máxima NO excluye mascotas con distancia desconocida', () {
+      controller.setAdopterLocation(-34.6, -58.4);
+      controller.setMaxDistance(10);
+      final unknownDistancePet = petAt(null, null);
+
+      final result = controller.applyFilters([unknownDistancePet]);
+
+      expect(result, contains(unknownDistancePet));
+    });
+
+    test('el filtro de distancia máxima SÍ excluye mascotas fuera de rango cuando se conoce', () {
+      controller.setAdopterLocation(-34.6037, -58.3816); // CABA
+      controller.setMaxDistance(10); // 10 km
+      final farPet = petAt(-31.4201, -64.1888); // Córdoba, ~650km
+
+      final result = controller.applyFilters([farPet]);
+
+      expect(result, isEmpty);
+    });
+  });
 }

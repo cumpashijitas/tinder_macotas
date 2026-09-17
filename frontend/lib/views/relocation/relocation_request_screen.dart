@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../controllers/auth_controller.dart';
 import '../../controllers/swipe_controller.dart';
 
 class RelocationRequestScreen extends StatefulWidget {
@@ -41,6 +42,14 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AuthController>(context, listen: false).ensureLocationCaptured();
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _breedController.dispose();
@@ -72,6 +81,10 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
       context,
       listen: false,
     );
+    final authController = Provider.of<AuthController>(
+      context,
+      listen: false,
+    );
     final messenger = ScaffoldMessenger.of(context);
 
     setState(() => _isSubmitting = true);
@@ -96,6 +109,10 @@ class _RelocationRequestScreenState extends State<RelocationRequestScreen> {
           : 'Mascota en búsqueda urgente de hogar responsable por fuerza mayor.',
       'photos': [_photoUrlController.text.trim()],
       'relocation_reason': _reasonController.text.trim(),
+      if (authController.profile?.latitude != null)
+        'latitude': authController.profile!.latitude,
+      if (authController.profile?.longitude != null)
+        'longitude': authController.profile!.longitude,
     };
 
     final relocatedPet = await swipeController.submitRelocation(payload);
