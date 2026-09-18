@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { ENV } from './config/env.js';
 import { ResponseView } from './views/response.view.js';
+import { apiRateLimiter } from './middlewares/rate_limit.middleware.js';
 import { authRouter } from './routes/auth.routes.js';
 import { adopterRouter } from './routes/adopter.routes.js';
 import { petRouter } from './routes/pet.routes.js';
@@ -14,7 +16,12 @@ import { notificationRouter } from './routes/notification.routes.js';
 
 const app = express();
 
+// El backend corre detrás del proxy de Vercel: sin esto, express-rate-limit
+// no puede confiar en X-Forwarded-For para identificar al cliente real.
+app.set('trust proxy', 1);
+
 // Middlewares globales
+app.use(helmet());
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -29,6 +36,9 @@ app.use(
   })
 );
 app.use(express.json());
+
+// Límite general de tasa para toda la API (protección básica contra abuso/fuerza bruta)
+app.use('/api', apiRateLimiter);
 
 // Endpoint de salud
 app.get('/health', (_req, res) => {

@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware.js';
 import { StoryModel } from '../models/story.model.js';
 import { ResponseView } from '../views/response.view.js';
+import { containsProhibitedContent } from '../utils/content_filter.js';
 
 export class StoryController {
   /**
@@ -39,6 +40,10 @@ export class StoryController {
     }
     if (!content || typeof content !== 'string' || content.trim().length < 20 || content.trim().length > 5000) {
       ResponseView.error(res, 'El relato debe tener entre 20 y 5000 caracteres', 400);
+      return;
+    }
+    if (containsProhibitedContent(title) || containsProhibitedContent(content) || containsProhibitedContent(pet_name)) {
+      ResponseView.error(res, 'La historia contiene lenguaje no permitido', 422);
       return;
     }
 

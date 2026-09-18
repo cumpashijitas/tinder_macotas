@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware.js';
 import { MessageModel } from '../models/message.model.js';
 import { ResponseView } from '../views/response.view.js';
+import { containsProhibitedContent } from '../utils/content_filter.js';
 
 const CHAT_ENABLED_STATUSES = ['approved_for_chat', 'interview_scheduled', 'adoption_finalized'];
 
@@ -54,6 +55,11 @@ export class MessageController {
 
     if (content.trim().length > 3000) {
       ResponseView.error(res, 'El mensaje no puede superar los 3000 caracteres', 422);
+      return;
+    }
+
+    if (containsProhibitedContent(content)) {
+      ResponseView.error(res, 'El mensaje contiene lenguaje no permitido', 422);
       return;
     }
 

@@ -242,4 +242,18 @@ describe('PetController.moderatePet', () => {
     const updatedPayload = petsBuilder.update.mock.calls[0][0];
     expect(updatedPayload.moderation_status).toBe('approved');
   });
+
+  it('registra la moderación en audit_logs con el admin como actor', async () => {
+    const req = { user: { id: 'admin-1', role: 'admin' }, params: { id: 'pet-1' }, body: { moderation_status: 'rejected', moderation_notes: 'Fotos poco claras' } };
+    const res = mockRes();
+
+    await PetController.moderatePet(req as never, res as never);
+
+    const auditBuilder = lastBuilderFor(mockAdmin, 'audit_logs');
+    const logPayload = auditBuilder.insert.mock.calls[0][0];
+    expect(logPayload.actor_id).toBe('admin-1');
+    expect(logPayload.action).toBe('pet_moderation_rejected');
+    expect(logPayload.target_table).toBe('pets');
+    expect(logPayload.target_id).toBe('pet-1');
+  });
 });

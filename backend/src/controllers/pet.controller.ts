@@ -2,17 +2,18 @@ import { Response } from 'express';
 import { ZodError } from 'zod';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware.js';
 import { PetModel, PetRecord, PetInputSchema } from '../models/pet.model.js';
+import { AuditLogModel } from '../models/audit_log.model.js';
 import { ResponseView } from '../views/response.view.js';
+import { containsProhibitedContent } from '../utils/content_filter.js';
 
 /**
  * Valida formato/rango de los campos de mascota presentes en el body.
  * Devuelve `true` y ya respondió 422 si el body es inválido; el caller
  * debe cortar la ejecución en ese caso.
  */
-function rejectIfInvalidPetInput(body: unknown, res: Response): boolean {
+function rejectIfInvalidPetInput(body: Record<string, unknown>, res: Response): boolean {
   try {
     PetInputSchema.parse(body);
-    return false;
   } catch (err) {
     if (err instanceof ZodError) {
       ResponseView.error(res, 'Algunos datos de la mascota no son válidos', 422, err.errors);
@@ -21,6 +22,17 @@ function rejectIfInvalidPetInput(body: unknown, res: Response): boolean {
     ResponseView.internalError(res, err);
     return true;
   }
+
+  const freeTextFields = ['story', 'special_needs'] as const;
+  for (const field of freeTextFields) {
+    const value = body[field];
+    if (typeof value === 'string' && containsProhibitedContent(value)) {
+      ResponseView.error(res, 'La descripción de la mascota contiene lenguaje no permitido', 422);
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export class PetController {
@@ -400,6 +412,9 @@ export class PetController {
 
     try {
       const updated = await PetModel.moderate(id, moderation_status, moderation_notes);
+      await AuditLogModel.record(req.user!.id, `pet_moderation_${moderation_status}`, 'pets', id, {
+        moderation_notes: moderation_notes || null,
+      });
       ResponseView.success(res, updated, 'Moderación aplicada correctamente');
     } catch (err) {
       ResponseView.internalError(res, err);

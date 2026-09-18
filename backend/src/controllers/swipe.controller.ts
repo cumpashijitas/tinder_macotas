@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware.js';
 import { SwipeModel } from '../models/swipe.model.js';
 import { MatchModel } from '../models/match.model.js';
+import { AuditLogModel } from '../models/audit_log.model.js';
 import { ResponseView } from '../views/response.view.js';
 
 export class SwipeController {
@@ -90,6 +91,7 @@ export class SwipeController {
 
     try {
       const updatedMatch = await MatchModel.updateStatus(id, shelterId, status, comments);
+      await AuditLogModel.record(shelterId, `match_status_${status}`, 'matches', id, { comments: comments || null });
       ResponseView.success(res, updatedMatch, 'Estado de solicitud actualizado correctamente');
     } catch (err) {
       ResponseView.internalError(res, err);

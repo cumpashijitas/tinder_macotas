@@ -41,4 +41,17 @@ describe('MessageController.send', () => {
 
     expect(res.status).toHaveBeenCalledWith(422);
   });
+
+  it('rechaza (422) un mensaje con lenguaje no permitido', async () => {
+    const req = {
+      user: { id: 'u1' },
+      params: { matchId: 'm1' },
+      body: { content: 'te voy a matar' },
+    };
+    const res = mockRes();
+
+    await MessageController.send(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(422);
+  });
 });

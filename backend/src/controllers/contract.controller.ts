@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware.js';
 import { ContractModel } from '../models/contract.model.js';
+import { AuditLogModel } from '../models/audit_log.model.js';
 import { ResponseView } from '../views/response.view.js';
 
 export class ContractController {
@@ -115,6 +116,7 @@ export class ContractController {
       }
 
       const updated = await ContractModel.sign(contract, userId);
+      await AuditLogModel.record(userId, 'contract_signed', 'adoption_contracts', contract.id, { matchId });
       ResponseView.success(res, updated, 'Contrato firmado correctamente');
     } catch (err) {
       ResponseView.internalError(res, err);

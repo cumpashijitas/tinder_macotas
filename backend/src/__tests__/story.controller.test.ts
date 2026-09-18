@@ -67,4 +67,20 @@ describe('StoryController.create', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
   });
+
+  it('rechaza (422) una historia con lenguaje no permitido en el relato', async () => {
+    const req = {
+      user: { id: 'u1' },
+      body: {
+        pet_name: 'Rocky',
+        title: 'Un final feliz',
+        content: `Fue un proceso hermoso, aunque al principio pensé "vete a la mierda" el trámite, pero valió la pena.`,
+      },
+    };
+    const res = mockRes();
+
+    await StoryController.create(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(422);
+  });
 });
