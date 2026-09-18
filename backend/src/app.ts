@@ -1,6 +1,6 @@
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
+import helmetImport from 'helmet';
 import { ENV } from './config/env.js';
 import { ResponseView } from './views/response.view.js';
 import { apiRateLimiter } from './middlewares/rate_limit.middleware.js';
@@ -13,6 +13,14 @@ import { visitRouter, visitStatusRouter } from './routes/visit.routes.js';
 import { contractRouter } from './routes/contract.routes.js';
 import { storyRouter } from './routes/story.routes.js';
 import { notificationRouter } from './routes/notification.routes.js';
+
+// El `exports` map de helmet (import→.mjs / require→.cjs con un único
+// `types: index.d.cts`) resuelve el tipo del default export de forma
+// inconsistente entre plataformas bajo moduleResolution NodeNext (funciona
+// en Windows, falla el build en el Linux de Vercel) aunque el export real
+// en runtime siempre es la función factory. Se fija el tipo a mano para no
+// depender de ese resolver.
+const helmet = helmetImport as unknown as (options?: Record<string, unknown>) => RequestHandler;
 
 const app = express();
 
