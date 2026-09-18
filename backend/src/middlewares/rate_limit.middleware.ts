@@ -1,5 +1,11 @@
-import rateLimit from 'express-rate-limit';
+import { Request, Response } from 'express';
+import rateLimitImport, { Options } from 'express-rate-limit';
 import { ResponseView } from '../views/response.view.js';
+
+// Mismo problema de tipos que helmet (ver app.ts): el exports map de
+// express-rate-limit resuelve el default export de forma inconsistente
+// entre plataformas bajo moduleResolution NodeNext.
+const rateLimit = rateLimitImport as unknown as (options?: Partial<Options>) => (req: Request, res: Response, next: () => void) => void;
 
 /**
  * Límite general para toda la API: protege contra fuerza bruta y abuso
@@ -10,7 +16,7 @@ export const apiRateLimiter = rateLimit({
   limit: 300,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (_req, res) => {
+  handler: (_req: Request, res: Response) => {
     ResponseView.error(res, 'Demasiadas solicitudes. Probá de nuevo en unos minutos.', 429);
   },
 });
@@ -25,7 +31,7 @@ export const otpRateLimiter = rateLimit({
   limit: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (_req, res) => {
+  handler: (_req: Request, res: Response) => {
     ResponseView.error(
       res,
       'Pediste demasiados códigos de verificación. Esperá unos minutos antes de volver a intentar.',
