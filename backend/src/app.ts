@@ -2,8 +2,11 @@ import express, { RequestHandler } from 'express';
 import cors from 'cors';
 import helmetImport from 'helmet';
 import { ENV } from './config/env.js';
+import { supabaseAdmin } from './config/supabase.js';
 import { ResponseView } from './views/response.view.js';
 import { apiRateLimiter } from './middlewares/rate_limit.middleware.js';
+import { requestLogger } from './middlewares/logging.middleware.js';
+import { errorHandler } from './middlewares/error_handler.middleware.js';
 import { authRouter } from './routes/auth.routes.js';
 import { adopterRouter } from './routes/adopter.routes.js';
 import { petRouter } from './routes/pet.routes.js';
@@ -29,6 +32,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Middlewares globales
+app.use(requestLogger);
 app.use(helmet());
 app.use(
   cors({
@@ -48,13 +52,33 @@ app.use(express.json());
 // Límite general de tasa para toda la API (protección básica contra abuso/fuerza bruta)
 app.use('/api', apiRateLimiter);
 
-// Endpoint de salud
-app.get('/health', (_req, res) => {
-  ResponseView.success(
-    res,
-    { status: 'healthy', timestamp: new Date().toISOString() },
-    'API PetMatch funcionando correctamente'
-  );
+// Endpoint de salud: además de confirmar que el proceso responde, hace una
+// consulta mínima a Supabase para detectar si la base está caída o
+// inalcanzable, en vez de reportar "healthy" incondicionalmente.
+app.get('/health', async (_req, res) => {
+  const start = Date.now();
+  let databaseStatus: 'up' | 'down' = 'up';
+
+  try {
+    const { error } = await supabaseAdmin.from('profiles').select('id').limit(1);
+    if (error) databaseStatus = 'down';
+  } catch {
+    databaseStatus = 'down';
+  }
+
+  const payload = {
+    status: databaseStatus === 'up' ? 'healthy' : 'degraded',
+    database: databaseStatus,
+    latencyMs: Date.now() - start,
+    timestamp: new Date().toISOString(),
+  };
+
+  if (databaseStatus === 'down') {
+    ResponseView.error(res, 'La API responde pero no puede conectarse a la base de datos', 503, payload);
+    return;
+  }
+
+  ResponseView.success(res, payload, 'API PetMatch funcionando correctamente');
 });
 
 // Rutas de la API REST
@@ -73,6 +97,9 @@ app.use('/api/notifications', notificationRouter);
 app.use((_req, res) => {
   ResponseView.notFound(res, 'Ruta no encontrada');
 });
+
+// Red de seguridad final para errores no atrapados por los controllers (debe ir último)
+app.use(errorHandler);
 
 // Inicio del servidor (se omite en tests y en el entorno serverless de Vercel,
 // que invoca el export por request en lugar de mantener un puerto abierto)

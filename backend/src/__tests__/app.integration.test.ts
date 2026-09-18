@@ -1,15 +1,39 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
+import { createSupabaseAdminMock } from './helpers/supabaseMock.js';
+
+const mockAdmin = createSupabaseAdminMock({
+  profiles: { data: [{ id: 'profile-1' }], error: null },
+});
+
+vi.mock('../config/supabase.js', () => ({
+  supabaseAdmin: mockAdmin,
+  supabaseAnon: mockAdmin,
+}));
 
 process.env.NODE_ENV = 'test';
 const { default: app } = await import('../app.js');
 
 describe('App HTTP básico', () => {
-  it('GET /health responde 200 con estado healthy', async () => {
+  it('GET /health responde 200 con estado healthy cuando la base responde', async () => {
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.status).toBe('healthy');
+    expect(res.body.data.database).toBe('up');
+  });
+
+  it('GET /health responde 503 y "degraded" si Supabase falla', async () => {
+    mockAdmin.from.mockImplementationOnce(() => ({
+      select: vi.fn().mockReturnThis(),
+      limit: vi.fn(() => Promise.resolve({ data: null, error: { message: 'connection refused' } })),
+    }));
+
+    const res = await request(app).get('/health');
+    expect(res.status).toBe(503);
+    expect(res.body.success).toBe(false);
+    expect(res.body.errors.status).toBe('degraded');
+    expect(res.body.errors.database).toBe('down');
   });
 
   it('GET /ruta-inexistente responde 404', async () => {
