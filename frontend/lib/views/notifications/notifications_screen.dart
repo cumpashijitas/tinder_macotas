@@ -76,9 +76,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               : RefreshIndicator(
                   onRefresh: () => controller.load(),
                   child: ListView.separated(
-                    itemCount: controller.notifications.length,
+                    itemCount:
+                        controller.notifications.length + (controller.hasMore ? 1 : 0),
                     separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (context, index) {
+                      if (index >= controller.notifications.length) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: controller.isLoadingMore
+                                ? const CircularProgressIndicator()
+                                : OutlinedButton(
+                                    onPressed: () => controller.loadMore(),
+                                    child: const Text('Cargar más'),
+                                  ),
+                          ),
+                        );
+                      }
+
                       final n = controller.notifications[index];
                       return ListTile(
                         tileColor: n.isRead ? null : AppTheme.primaryColor.withValues(alpha: 0.06),

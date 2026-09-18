@@ -14,7 +14,7 @@ export function createQueryBuilderMock(result: MockResult) {
   const builder: Record<string, unknown> = {};
   const chainMethods = [
     'select', 'insert', 'update', 'upsert', 'delete',
-    'eq', 'neq', 'not', 'in', 'order', 'limit',
+    'eq', 'neq', 'not', 'in', 'or', 'order', 'limit', 'range',
   ];
 
   for (const method of chainMethods) {

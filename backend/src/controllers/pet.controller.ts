@@ -5,6 +5,7 @@ import { PetModel, PetRecord, PetInputSchema } from '../models/pet.model.js';
 import { AuditLogModel } from '../models/audit_log.model.js';
 import { ResponseView } from '../views/response.view.js';
 import { containsProhibitedContent } from '../utils/content_filter.js';
+import { parsePagination } from '../utils/pagination.js';
 
 /**
  * Valida formato/rango de los campos de mascota presentes en el body.
@@ -48,13 +49,13 @@ export class PetController {
     }
 
     try {
-      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+      const { limit, offset } = parsePagination(req.query as Record<string, unknown>);
       const species = req.query.species as string | undefined;
       const publisherType = req.query.publisher_type as string | undefined;
 
-      const pets = await PetModel.getFeedForAdopter(userId, { limit, species, publisherType });
+      const { items, hasMore } = await PetModel.getFeedForAdopter(userId, { limit, offset, species, publisherType });
 
-      ResponseView.success(res, pets, 'Feed de mascotas recuperado');
+      ResponseView.success(res, items, 'Feed de mascotas recuperado', 200, { limit, offset, hasMore });
     } catch (err) {
       ResponseView.internalError(res, err);
     }

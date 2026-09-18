@@ -41,16 +41,25 @@ export class NotificationModel {
     }
   }
 
-  static async listForUser(userId: string, limit = 50): Promise<NotificationRecord[]> {
+  static async listForUser(
+    userId: string,
+    pagination: { limit?: number; offset?: number } = {}
+  ): Promise<{ items: NotificationRecord[]; hasMore: boolean }> {
+    const limit = pagination.limit || 50;
+    const offset = pagination.offset || 0;
+
     const { data, error } = await supabaseAdmin
       .from('notifications')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .range(offset, offset + limit);
 
     if (error) throw error;
-    return (data || []) as NotificationRecord[];
+
+    const rows = (data || []) as NotificationRecord[];
+    const hasMore = rows.length > limit;
+    return { items: hasMore ? rows.slice(0, limit) : rows, hasMore };
   }
 
   static async countUnread(userId: string): Promise<number> {

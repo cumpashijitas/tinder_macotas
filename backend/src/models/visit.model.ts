@@ -28,15 +28,25 @@ export class VisitModel {
    * Todas las visitas donde el usuario participa (como adoptante o refugio),
    * para el historial consolidado.
    */
-  static async listForUser(userId: string): Promise<unknown[]> {
+  static async listForUser(
+    userId: string,
+    pagination: { limit?: number; offset?: number } = {}
+  ): Promise<{ items: unknown[]; hasMore: boolean }> {
+    const limit = pagination.limit || 50;
+    const offset = pagination.offset || 0;
+
     const { data, error } = await supabaseAdmin
       .from('visit_requests')
       .select('*, matches!inner(*, pets(name, photos))')
       .or(`adopter_id.eq.${userId},shelter_id.eq.${userId}`, { referencedTable: 'matches' })
-      .order('proposed_at', { ascending: false });
+      .order('proposed_at', { ascending: false })
+      .range(offset, offset + limit);
 
     if (error) throw error;
-    return data || [];
+
+    const rows = data || [];
+    const hasMore = rows.length > limit;
+    return { items: hasMore ? rows.slice(0, limit) : rows, hasMore };
   }
 
   static async findByMatchId(matchId: string): Promise<VisitRecord[]> {

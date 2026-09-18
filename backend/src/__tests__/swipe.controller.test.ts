@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createSupabaseAdminMock, lastBuilderFor } from './helpers/supabaseMock.js';
+import { createSupabaseAdminMock, createQueryBuilderMock, lastBuilderFor } from './helpers/supabaseMock.js';
 
 const mockAdmin = createSupabaseAdminMock({
   matches: {
@@ -50,5 +50,28 @@ describe('SwipeController.updateMatchStatus', () => {
     expect(logPayload.action).toBe('match_status_approved_for_chat');
     expect(logPayload.target_table).toBe('matches');
     expect(logPayload.target_id).toBe('match-1');
+  });
+});
+
+describe('SwipeController.getMatches', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('incluye limit/offset/hasMore en meta', async () => {
+    mockAdmin.from.mockImplementationOnce((table: string) => {
+      expect(table).toBe('matches');
+      return createQueryBuilderMock({ data: [{ id: 'match-1' }, { id: 'match-2' }], error: null });
+    });
+
+    const req = { user: { id: 'adopter-1', role: 'adopter' }, query: { limit: '2' } };
+    const res = mockRes();
+
+    await SwipeController.getMatches(req as never, res as never);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        meta: { limit: 2, offset: 0, hasMore: false },
+      })
+    );
   });
 });

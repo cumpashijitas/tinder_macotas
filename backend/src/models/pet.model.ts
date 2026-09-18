@@ -99,9 +99,10 @@ export class PetModel {
    */
   static async getFeedForAdopter(
     adopterId: string,
-    options: { limit?: number; species?: string; publisherType?: string } = {}
-  ): Promise<PetRecord[]> {
+    options: { limit?: number; offset?: number; species?: string; publisherType?: string } = {}
+  ): Promise<{ items: PetRecord[]; hasMore: boolean }> {
     const limit = options.limit || 20;
+    const offset = options.offset || 0;
 
     // 1. Obtener IDs de mascotas ya swipéadas por este usuario
     const { data: swipedPets, error: swipeError } = await supabaseAdmin
@@ -113,14 +114,16 @@ export class PetModel {
 
     const excludedPetIds = (swipedPets || []).map((s) => s.pet_id);
 
-    // 2. Consultar mascotas disponibles
+    // 2. Consultar mascotas disponibles. Se pide una fila de más
+    // (offset..offset+limit) para saber si hay una página siguiente sin
+    // necesitar un COUNT aparte.
     let query = supabaseAdmin
       .from('pets')
       .select('*')
       .eq('status', 'available')
       .eq('moderation_status', 'approved')
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .range(offset, offset + limit);
 
     if (options.species) {
       query = query.eq('species', options.species);
@@ -137,7 +140,9 @@ export class PetModel {
     const { data, error } = await query;
     if (error) throw error;
 
-    return (data || []) as PetRecord[];
+    const rows = (data || []) as PetRecord[];
+    const hasMore = rows.length > limit;
+    return { items: hasMore ? rows.slice(0, limit) : rows, hasMore };
   }
 
   static async create(pet: Omit<PetRecord, 'id' | 'created_at' | 'updated_at'>): Promise<PetRecord> {

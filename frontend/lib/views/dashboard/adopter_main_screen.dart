@@ -412,7 +412,12 @@ class _ExploreTabState extends State<_ExploreTab> {
                         ),
                       )
                     : filter.isGridView
-                    ? PetGridFeedView(pets: filteredPets)
+                    ? PetGridFeedView(
+                        pets: filteredPets,
+                        hasMore: swipe.hasMoreFeed,
+                        isLoadingMore: swipe.isLoadingMoreFeed,
+                        onLoadMore: () => swipe.loadMoreFeed(),
+                      )
                     : _buildSwipeView(context, swipe, filteredPets),
               ),
             ],

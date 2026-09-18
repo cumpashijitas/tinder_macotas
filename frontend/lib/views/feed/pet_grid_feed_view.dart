@@ -12,8 +12,17 @@ import 'widgets/pet_detail_sheet.dart';
 
 class PetGridFeedView extends StatelessWidget {
   final List<PetModel> pets;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final VoidCallback? onLoadMore;
 
-  const PetGridFeedView({super.key, required this.pets});
+  const PetGridFeedView({
+    super.key,
+    required this.pets,
+    this.hasMore = false,
+    this.isLoadingMore = false,
+    this.onLoadMore,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -87,49 +96,75 @@ class PetGridFeedView extends StatelessWidget {
         return Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1400),
-            child: GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              itemCount: pets.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 12,
-                childAspectRatio: childAspectRatio,
-              ),
-              itemBuilder: (context, index) {
-                final pet = pets[index];
-                final distanceKm = filter.getPetDistanceKm(pet);
-                final matchResult = CompatibilityService.calculateMatch(
-                  adopter: adopterForm,
-                  pet: pet,
-                );
-
-                return _PetGridCard(
-                  pet: pet,
-                  distanceKm: distanceKm,
-                  matchPercentage: matchResult.percentage,
-                  onTap: () => PetDetailSheet.show(
-                    context,
-                    pet,
-                    onApplyAdoption: () {
-                      swipe.handleSwipe(
-                        swipe.pets.indexOf(pet),
-                        null,
-                        // right swipe indicates interest
-                        CardSwiperDirection.right,
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: childAspectRatio,
+                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final pet = pets[index];
+                      final distanceKm = filter.getPetDistanceKm(pet);
+                      final matchResult = CompatibilityService.calculateMatch(
+                        adopter: adopterForm,
+                        pet: pet,
                       );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            '¡Postulación enviada por ${pet.name}!',
-                          ),
-                          backgroundColor: AppTheme.successGreen,
+
+                      return _PetGridCard(
+                        pet: pet,
+                        distanceKm: distanceKm,
+                        matchPercentage: matchResult.percentage,
+                        onTap: () => PetDetailSheet.show(
+                          context,
+                          pet,
+                          onApplyAdoption: () {
+                            swipe.handleSwipe(
+                              swipe.pets.indexOf(pet),
+                              null,
+                              // right swipe indicates interest
+                              CardSwiperDirection.right,
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '¡Postulación enviada por ${pet.name}!',
+                                ),
+                                backgroundColor: AppTheme.successGreen,
+                              ),
+                            );
+                          },
                         ),
                       );
-                    },
+                    }, childCount: pets.length),
                   ),
-                );
-              },
+                ),
+                if (onLoadMore != null && hasMore)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: Center(
+                        child: isLoadingMore
+                            ? const Padding(
+                                padding: EdgeInsets.all(16),
+                                child: CircularProgressIndicator(),
+                              )
+                            : OutlinedButton.icon(
+                                icon: const Icon(Icons.expand_more),
+                                label: const Text('Cargar más'),
+                                onPressed: onLoadMore,
+                              ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         );

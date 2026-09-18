@@ -4,6 +4,31 @@ import 'package:frontend/controllers/swipe_controller.dart';
 import 'package:frontend/models/pet_model.dart';
 import '../helpers/mock_api_service.dart';
 
+Map<String, dynamic> _petJson(String id, {String name = 'Rocky'}) => {
+      'id': id,
+      'shelter_id': 'shelter-1',
+      'publisher_type': 'shelter',
+      'name': name,
+      'species': 'dog',
+      'breed': 'Mestizo',
+      'age_years': 2.0,
+      'gender': 'male',
+      'size': 'medium',
+      'energy_level': 3,
+      'is_vaccinated': true,
+      'is_neutered': true,
+      'good_with_dogs': true,
+      'good_with_cats': true,
+      'good_with_kids': true,
+      'requires_yard': false,
+      'story': 'Buen perro',
+      'photos': <String>[],
+      'status': 'available',
+    };
+
+List<Map<String, dynamic>> _petPage(int count) =>
+    List.generate(count, (i) => _petJson('pet-$i'));
+
 PetModel _samplePetJson() => PetModel.fromJson({
       'id': 'pet-1',
       'shelter_id': 'shelter-1',
@@ -56,6 +81,56 @@ void main() {
 
     expect(controller.pets, isEmpty);
     expect(controller.errorMessage, contains('Token inválido'));
+  });
+
+  test('loadFeed marca hasMoreFeed=true cuando llega una página completa (20)', () async {
+    when(() => client.get(any(), headers: any(named: 'headers')))
+        .thenAnswer((_) async => jsonResponse(_petPage(20)));
+
+    await controller.loadFeed();
+
+    expect(controller.pets.length, 20);
+    expect(controller.hasMoreFeed, isTrue);
+  });
+
+  test('loadFeed marca hasMoreFeed=false cuando la página viene incompleta', () async {
+    when(() => client.get(any(), headers: any(named: 'headers')))
+        .thenAnswer((_) async => jsonResponse(_petPage(5)));
+
+    await controller.loadFeed();
+
+    expect(controller.pets.length, 5);
+    expect(controller.hasMoreFeed, isFalse);
+  });
+
+  test('loadMoreFeed pide offset=pets.length y agrega los nuevos al final', () async {
+    when(() => client.get(
+          any(that: predicate<Uri>((u) => u.toString().contains('offset=0'))),
+          headers: any(named: 'headers'),
+        )).thenAnswer((_) async => jsonResponse(_petPage(20)));
+    await controller.loadFeed();
+
+    when(() => client.get(
+          any(that: predicate<Uri>((u) => u.toString().contains('offset=20'))),
+          headers: any(named: 'headers'),
+        )).thenAnswer((_) async => jsonResponse(_petPage(3)));
+
+    await controller.loadMoreFeed();
+
+    expect(controller.pets.length, 23);
+    expect(controller.hasMoreFeed, isFalse);
+  });
+
+  test('loadMoreFeed no hace nada si hasMoreFeed es false', () async {
+    when(() => client.get(any(), headers: any(named: 'headers')))
+        .thenAnswer((_) async => jsonResponse(_petPage(5)));
+    await controller.loadFeed();
+    expect(controller.hasMoreFeed, isFalse);
+
+    await controller.loadMoreFeed();
+
+    verify(() => client.get(any(), headers: any(named: 'headers'))).called(1);
+    expect(controller.pets.length, 5);
   });
 
   test('publishPet agrega la mascota creada al inventario', () async {

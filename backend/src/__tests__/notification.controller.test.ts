@@ -47,7 +47,9 @@ describe('NotificationController.list', () => {
         data: expect.objectContaining({
           notifications: expect.any(Array),
           unreadCount: 3,
+          hasMore: false,
         }),
+        meta: { limit: 50, offset: 0 },
       })
     );
   });

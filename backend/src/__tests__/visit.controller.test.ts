@@ -61,3 +61,21 @@ describe('VisitController.create', () => {
     expect(res.status).toHaveBeenCalledWith(422);
   });
 });
+
+describe('VisitController.listAll', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('incluye limit/offset/hasMore en meta', async () => {
+    const req = { user: { id: 'u1' }, query: { limit: '10', offset: '5' } };
+    const res = mockRes();
+
+    await VisitController.listAll(req as never, res as never);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        meta: expect.objectContaining({ limit: 10, offset: 5 }),
+      })
+    );
+  });
+});

@@ -5,15 +5,23 @@ export interface ApiResponse<T = unknown> {
   message?: string;
   data?: T;
   errors?: unknown;
+  meta?: Record<string, unknown>;
 }
 
 export class ResponseView {
-  static success<T>(res: Response, data: T, message?: string, statusCode = 200): Response {
+  static success<T>(
+    res: Response,
+    data: T,
+    message?: string,
+    statusCode = 200,
+    meta?: Record<string, unknown>
+  ): Response {
     const payload: ApiResponse<T> = {
       success: true,
       message,
       data,
     };
+    if (meta) payload.meta = meta;
     return res.status(statusCode).json(payload);
   }
 

@@ -56,3 +56,21 @@ describe('ContractController.sign', () => {
     expect(res.status).toHaveBeenCalledWith(403);
   });
 });
+
+describe('ContractController.listAll', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('incluye limit/offset/hasMore en meta', async () => {
+    const req = { user: { id: 'adopter-1' }, query: {} };
+    const res = mockRes();
+
+    await ContractController.listAll(req as never, res as never);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        meta: expect.objectContaining({ limit: 50, offset: 0 }),
+      })
+    );
+  });
+});

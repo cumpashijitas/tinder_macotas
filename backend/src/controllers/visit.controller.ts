@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware.js';
 import { VisitModel } from '../models/visit.model.js';
 import { ResponseView } from '../views/response.view.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const VALID_STATUSES = ['pending', 'confirmed', 'declined', 'completed', 'cancelled'];
 
@@ -23,8 +24,9 @@ export class VisitController {
     }
 
     try {
-      const visits = await VisitModel.listForUser(userId);
-      ResponseView.success(res, visits, 'Visitas recuperadas');
+      const { limit, offset } = parsePagination(req.query as Record<string, unknown>, 50);
+      const { items, hasMore } = await VisitModel.listForUser(userId, { limit, offset });
+      ResponseView.success(res, items, 'Visitas recuperadas', 200, { limit, offset, hasMore });
     } catch (err) {
       ResponseView.internalError(res, err);
     }

@@ -10,44 +10,80 @@ class SwipeController extends ChangeNotifier {
 
   SwipeController({ApiService? apiService}) : _api = apiService ?? ApiService();
 
+  static const int _feedPageSize = 20;
+
   List<PetModel> _pets = [];
   List<PetModel> _inventory = [];
   bool _isLoading = false;
+  bool _isLoadingMoreFeed = false;
+  bool _hasMoreFeed = false;
+  String? _feedSpecies;
+  String? _feedPublisherType;
   String? _lastSwipeFeedback;
   String? _errorMessage;
 
   List<PetModel> get pets => _pets;
   List<PetModel> get inventory => _inventory;
   bool get isLoading => _isLoading;
+  bool get isLoadingMoreFeed => _isLoadingMoreFeed;
+  bool get hasMoreFeed => _hasMoreFeed;
   String? get lastSwipeFeedback => _lastSwipeFeedback;
   String? get errorMessage => _errorMessage;
 
-  /// Carga el feed de mascotas disponibles (excluye las ya swipeadas por el adoptante)
+  String _feedQuery({required int offset}) {
+    final params = <String>['limit=$_feedPageSize', 'offset=$offset'];
+    if (_feedSpecies != null) {
+      params.add('species=${Uri.encodeQueryComponent(_feedSpecies!)}');
+    }
+    if (_feedPublisherType != null) {
+      params.add('publisher_type=${Uri.encodeQueryComponent(_feedPublisherType!)}');
+    }
+    return '?${params.join('&')}';
+  }
+
+  /// Carga la primera página del feed de mascotas disponibles (excluye las ya swipeadas)
   Future<void> loadFeed({String? species, String? publisherType}) async {
     _isLoading = true;
     _errorMessage = null;
+    _feedSpecies = species;
+    _feedPublisherType = publisherType;
     notifyListeners();
 
     try {
-      final params = <String>[];
-      if (species != null) {
-        params.add('species=${Uri.encodeQueryComponent(species)}');
-      }
-      if (publisherType != null) {
-        params.add('publisher_type=${Uri.encodeQueryComponent(publisherType)}');
-      }
-      final query = params.isNotEmpty ? '?${params.join('&')}' : '';
-
-      final data = await _api.get('/pets/feed$query');
+      final data = await _api.get('/pets/feed${_feedQuery(offset: 0)}');
       _pets = (data as List<dynamic>)
           .map((e) => PetModel.fromJson(e as Map<String, dynamic>))
           .toList();
+      _hasMoreFeed = _pets.length == _feedPageSize;
     } catch (e) {
       _errorMessage = e.toString();
       _pets = [];
+      _hasMoreFeed = false;
     }
 
     _isLoading = false;
+    notifyListeners();
+  }
+
+  /// Trae la siguiente página y la agrega al final del feed ya cargado.
+  Future<void> loadMoreFeed() async {
+    if (_isLoadingMoreFeed || !_hasMoreFeed) return;
+
+    _isLoadingMoreFeed = true;
+    notifyListeners();
+
+    try {
+      final data = await _api.get('/pets/feed${_feedQuery(offset: _pets.length)}');
+      final nextPage = (data as List<dynamic>)
+          .map((e) => PetModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+      _pets = [..._pets, ...nextPage];
+      _hasMoreFeed = nextPage.length == _feedPageSize;
+    } catch (e) {
+      _errorMessage = e.toString();
+    }
+
+    _isLoadingMoreFeed = false;
     notifyListeners();
   }
 

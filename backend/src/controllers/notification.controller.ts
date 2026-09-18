@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware.js';
 import { NotificationModel } from '../models/notification.model.js';
 import { ResponseView } from '../views/response.view.js';
+import { parsePagination } from '../utils/pagination.js';
 
 export class NotificationController {
   static async list(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -12,11 +13,15 @@ export class NotificationController {
     }
 
     try {
-      const [notifications, unreadCount] = await Promise.all([
-        NotificationModel.listForUser(userId),
+      const { limit, offset } = parsePagination(req.query as Record<string, unknown>, 50);
+      const [{ items, hasMore }, unreadCount] = await Promise.all([
+        NotificationModel.listForUser(userId, { limit, offset }),
         NotificationModel.countUnread(userId),
       ]);
-      ResponseView.success(res, { notifications, unreadCount }, 'Notificaciones recuperadas');
+      ResponseView.success(res, { notifications: items, unreadCount, hasMore }, 'Notificaciones recuperadas', 200, {
+        limit,
+        offset,
+      });
     } catch (err) {
       ResponseView.internalError(res, err);
     }

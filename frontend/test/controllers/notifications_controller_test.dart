@@ -38,6 +38,65 @@ void main() {
     expect(controller.unreadCount, 1);
   });
 
+  test('load guarda hasMore según lo que informa el backend', () async {
+    when(() => client.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse({
+        'notifications': [_notifJson('n1')],
+        'unreadCount': 0,
+        'hasMore': true,
+      }),
+    );
+
+    await controller.load();
+
+    expect(controller.hasMore, isTrue);
+  });
+
+  test('loadMore pide el siguiente offset y agrega notificaciones al final', () async {
+    when(() => client.get(
+          any(that: predicate<Uri>((u) => !u.toString().contains('offset'))),
+          headers: any(named: 'headers'),
+        )).thenAnswer(
+      (_) async => jsonResponse({
+        'notifications': [_notifJson('n1')],
+        'unreadCount': 0,
+        'hasMore': true,
+      }),
+    );
+    await controller.load();
+
+    when(() => client.get(
+          any(that: predicate<Uri>((u) => u.toString().contains('offset=1'))),
+          headers: any(named: 'headers'),
+        )).thenAnswer(
+      (_) async => jsonResponse({
+        'notifications': [_notifJson('n2')],
+        'unreadCount': 0,
+        'hasMore': false,
+      }),
+    );
+
+    await controller.loadMore();
+
+    expect(controller.notifications.map((n) => n.id), ['n1', 'n2']);
+    expect(controller.hasMore, isFalse);
+  });
+
+  test('loadMore no hace nada si hasMore es false', () async {
+    when(() => client.get(any(), headers: any(named: 'headers'))).thenAnswer(
+      (_) async => jsonResponse({
+        'notifications': [_notifJson('n1')],
+        'unreadCount': 0,
+        'hasMore': false,
+      }),
+    );
+    await controller.load();
+
+    await controller.loadMore();
+
+    verify(() => client.get(any(), headers: any(named: 'headers'))).called(1);
+  });
+
   test('markRead marca localmente y descuenta el contador', () async {
     when(() => client.get(any(), headers: any(named: 'headers'))).thenAnswer(
       (_) async => jsonResponse({

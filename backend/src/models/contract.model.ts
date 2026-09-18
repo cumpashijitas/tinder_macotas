@@ -33,15 +33,25 @@ export class ContractModel {
    * Todos los contratos donde el usuario participa (como adoptante o refugio),
    * para el historial consolidado.
    */
-  static async listForUser(userId: string): Promise<unknown[]> {
+  static async listForUser(
+    userId: string,
+    pagination: { limit?: number; offset?: number } = {}
+  ): Promise<{ items: unknown[]; hasMore: boolean }> {
+    const limit = pagination.limit || 50;
+    const offset = pagination.offset || 0;
+
     const { data, error } = await supabaseAdmin
       .from('adoption_contracts')
       .select('*, matches(*, pets(name, photos))')
       .or(`adopter_id.eq.${userId},shelter_id.eq.${userId}`)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit);
 
     if (error) throw error;
-    return data || [];
+
+    const rows = data || [];
+    const hasMore = rows.length > limit;
+    return { items: hasMore ? rows.slice(0, limit) : rows, hasMore };
   }
 
   static async findByMatchId(matchId: string): Promise<ContractRecord | null> {

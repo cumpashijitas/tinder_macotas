@@ -4,6 +4,7 @@ import { SwipeModel } from '../models/swipe.model.js';
 import { MatchModel } from '../models/match.model.js';
 import { AuditLogModel } from '../models/audit_log.model.js';
 import { ResponseView } from '../views/response.view.js';
+import { parsePagination } from '../utils/pagination.js';
 
 export class SwipeController {
   /**
@@ -51,8 +52,9 @@ export class SwipeController {
     }
 
     try {
-      const matches = await MatchModel.getMatchesByUserId(userId, role);
-      ResponseView.success(res, matches, 'Matches recuperados');
+      const { limit, offset } = parsePagination(req.query as Record<string, unknown>, 50);
+      const { items, hasMore } = await MatchModel.getMatchesByUserId(userId, role, { limit, offset });
+      ResponseView.success(res, items, 'Matches recuperados', 200, { limit, offset, hasMore });
     } catch (err) {
       ResponseView.internalError(res, err);
     }

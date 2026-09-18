@@ -93,6 +93,37 @@ describe('PetController.create', () => {
   });
 });
 
+describe('PetController.getFeed', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('incluye limit/offset/hasMore en meta usando los defaults cuando no vienen en la query', async () => {
+    const req = { user: { id: 'adopter-1' }, query: {} };
+    const res = mockRes();
+
+    await PetController.getFeed(req as never, res as never);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        meta: { limit: 20, offset: 0, hasMore: false },
+      })
+    );
+  });
+
+  it('respeta limit/offset pedidos por query string', async () => {
+    const req = { user: { id: 'adopter-1' }, query: { limit: '5', offset: '10' } };
+    const res = mockRes();
+
+    await PetController.getFeed(req as never, res as never);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        meta: expect.objectContaining({ limit: 5, offset: 10 }),
+      })
+    );
+  });
+});
+
 describe('PetController.relocatePet', () => {
   beforeEach(() => vi.clearAllMocks());
 

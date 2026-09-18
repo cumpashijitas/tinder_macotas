@@ -3,6 +3,7 @@ import { AuthenticatedRequest } from '../middlewares/auth.middleware.js';
 import { ContractModel } from '../models/contract.model.js';
 import { AuditLogModel } from '../models/audit_log.model.js';
 import { ResponseView } from '../views/response.view.js';
+import { parsePagination } from '../utils/pagination.js';
 
 export class ContractController {
   /**
@@ -16,8 +17,9 @@ export class ContractController {
     }
 
     try {
-      const contracts = await ContractModel.listForUser(userId);
-      ResponseView.success(res, contracts, 'Contratos recuperados');
+      const { limit, offset } = parsePagination(req.query as Record<string, unknown>, 50);
+      const { items, hasMore } = await ContractModel.listForUser(userId, { limit, offset });
+      ResponseView.success(res, items, 'Contratos recuperados', 200, { limit, offset, hasMore });
     } catch (err) {
       ResponseView.internalError(res, err);
     }

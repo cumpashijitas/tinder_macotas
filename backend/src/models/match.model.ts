@@ -21,8 +21,15 @@ export interface MatchRecord {
 }
 
 export class MatchModel {
-  static async getMatchesByUserId(userId: string, role: 'adopter' | 'shelter'): Promise<unknown[]> {
+  static async getMatchesByUserId(
+    userId: string,
+    role: 'adopter' | 'shelter',
+    pagination: { limit?: number; offset?: number } = {}
+  ): Promise<{ items: unknown[]; hasMore: boolean }> {
     const column = role === 'shelter' ? 'shelter_id' : 'adopter_id';
+    const limit = pagination.limit || 20;
+    const offset = pagination.offset || 0;
+    const range = [offset, offset + limit] as const;
 
     const { data, error } = await supabaseAdmin
       .from('matches')
@@ -33,7 +40,8 @@ export class MatchModel {
         adopter_form:adopter_forms!adopter_forms_user_id_fkey (*)
       `)
       .eq(column, userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(...range);
 
     if (error) {
       // Si la consulta relacional con joins falla por falta de llaves específicas de Supabase, fallback a consulta simple
@@ -41,13 +49,18 @@ export class MatchModel {
         .from('matches')
         .select('*, pets (*)')
         .eq(column, userId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(...range);
 
       if (fallbackError) throw fallbackError;
-      return fallbackData || [];
+      const fallbackRows = fallbackData || [];
+      const fallbackHasMore = fallbackRows.length > limit;
+      return { items: fallbackHasMore ? fallbackRows.slice(0, limit) : fallbackRows, hasMore: fallbackHasMore };
     }
 
-    return data || [];
+    const rows = data || [];
+    const hasMore = rows.length > limit;
+    return { items: hasMore ? rows.slice(0, limit) : rows, hasMore };
   }
 
   static async updateStatus(
