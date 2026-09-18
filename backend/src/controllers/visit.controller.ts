@@ -73,6 +73,17 @@ export class VisitController {
       return;
     }
 
+    const FIVE_MINUTES_MS = 5 * 60 * 1000;
+    if (Date.parse(proposed_at) < Date.now() - FIVE_MINUTES_MS) {
+      ResponseView.error(res, 'La visita propuesta debe ser en una fecha/hora futura', 422);
+      return;
+    }
+
+    if (notes !== undefined && notes !== null && (typeof notes !== 'string' || notes.trim().length > 500)) {
+      ResponseView.error(res, 'Las notas no pueden superar los 500 caracteres', 422);
+      return;
+    }
+
     try {
       if (!(await assertParticipant(matchId, userId))) {
         ResponseView.forbidden(res, 'No participás de este match');

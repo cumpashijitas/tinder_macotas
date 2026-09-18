@@ -90,6 +90,14 @@ export class AuthController {
     // pisar con null una ubicación ya guardada en una edición que no la envía.
     const locationPatch: Record<string, number> = {};
     if (typeof latitude === 'number' && typeof longitude === 'number') {
+      if (latitude < -90 || latitude > 90) {
+        ResponseView.error(res, 'La latitud debe estar entre -90 y 90', 400);
+        return;
+      }
+      if (longitude < -180 || longitude > 180) {
+        ResponseView.error(res, 'La longitud debe estar entre -180 y 180', 400);
+        return;
+      }
       locationPatch.latitude = latitude;
       locationPatch.longitude = longitude;
     }

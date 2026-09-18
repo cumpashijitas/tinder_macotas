@@ -1,4 +1,31 @@
+import { z } from 'zod';
 import { supabaseAdmin } from '../config/supabase.js';
+
+// Valida formato y rango de los campos que puede enviar el cliente al crear o
+// editar una mascota. Espeja los CHECK de 01_schema.sql/05_extended_schema.sql
+// para devolver un mensaje claro en vez del error crudo de Postgres. Todos los
+// campos son opcionales acá: los requeridos y los valores por defecto los
+// sigue resolviendo el controller, esto sólo rechaza datos con formato inválido.
+export const PetInputSchema = z.object({
+  name: z.string().trim().min(1, 'El nombre no puede estar vacío').max(80, 'El nombre es demasiado largo (máx. 80 caracteres)').optional(),
+  species: z.enum(['dog', 'cat', 'other']).optional(),
+  breed: z.string().trim().max(80, 'La raza es demasiado larga (máx. 80 caracteres)').optional(),
+  age_years: z.number().min(0, 'La edad no puede ser negativa').max(30, 'La edad ingresada no es realista (máx. 30 años)').optional(),
+  gender: z.enum(['male', 'female']).optional(),
+  size: z.enum(['small', 'medium', 'large', 'giant']).optional(),
+  energy_level: z.number().int('El nivel de energía debe ser un número entero').min(1).max(5, 'El nivel de energía debe estar entre 1 y 5').optional(),
+  origin: z.enum(['home_litter', 'street_rescue', 'shelter_born', 'relinquished']).optional(),
+  birth_date: z.string().nullable().optional(),
+  vaccines_applied: z.array(z.string().trim().min(1).max(100)).max(20, 'Máximo 20 vacunas registradas').optional(),
+  reproductive_status: z.enum(['neutered', 'spayed', 'requires_spay_agreement', 'intact']).optional(),
+  storm_anxiety: z.number().int('El nivel de ansiedad a tormentas debe ser un número entero').min(1).max(5, 'El nivel de ansiedad a tormentas debe estar entre 1 y 5').optional(),
+  special_needs: z.string().trim().max(1000, 'Las necesidades especiales no pueden superar los 1000 caracteres').nullable().optional(),
+  story: z.string().trim().max(2000, 'La historia no puede superar los 2000 caracteres').optional(),
+  delivery_type: z.enum(['pickup_at_shelter', 'home_delivery', 'to_be_agreed']).optional(),
+  photos: z.array(z.string().trim().url('Cada foto debe ser una URL válida')).max(12, 'Máximo 12 fotos por mascota').optional(),
+  latitude: z.number().min(-90, 'La latitud debe estar entre -90 y 90').max(90, 'La latitud debe estar entre -90 y 90').nullable().optional(),
+  longitude: z.number().min(-180, 'La longitud debe estar entre -180 y 180').max(180, 'La longitud debe estar entre -180 y 180').nullable().optional(),
+});
 
 export interface PetRecord {
   id: string;

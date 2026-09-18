@@ -55,6 +55,42 @@ describe('PetController.create', () => {
     expect(insertedPayload.moderation_status).toBe('approved');
     expect(insertedPayload.shelter_id).toBe('shelter-1');
   });
+
+  it('rechaza (422) un age_years fuera de rango en vez de dejarlo llegar a Postgres', async () => {
+    const req = {
+      user: { id: 'shelter-1', role: 'shelter' },
+      body: { name: 'Rocky', species: 'dog', age_years: -5 },
+    };
+    const res = mockRes();
+
+    await PetController.create(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(422);
+  });
+
+  it('rechaza (422) una foto que no es una URL válida', async () => {
+    const req = {
+      user: { id: 'shelter-1', role: 'shelter' },
+      body: { name: 'Rocky', species: 'dog', photos: ['no-es-una-url'] },
+    };
+    const res = mockRes();
+
+    await PetController.create(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(422);
+  });
+
+  it('rechaza (422) latitude/longitude fuera de rango', async () => {
+    const req = {
+      user: { id: 'shelter-1', role: 'shelter' },
+      body: { name: 'Rocky', species: 'dog', latitude: 500 },
+    };
+    const res = mockRes();
+
+    await PetController.create(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(422);
+  });
 });
 
 describe('PetController.relocatePet', () => {
@@ -125,6 +161,15 @@ describe('PetController.updatePet', () => {
     await PetController.updatePet(req as never, res as never);
 
     expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it('rechaza (422) un energy_level fuera de rango antes de tocar la base', async () => {
+    const req = { user: { id: 'u1' }, params: { id: 'pet-1' }, body: { energy_level: 9 } };
+    const res = mockRes();
+
+    await PetController.updatePet(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(422);
   });
 });
 

@@ -52,6 +52,11 @@ export class MessageController {
       return;
     }
 
+    if (content.trim().length > 3000) {
+      ResponseView.error(res, 'El mensaje no puede superar los 3000 caracteres', 422);
+      return;
+    }
+
     try {
       const { ok, status, adopterId, shelterId } = await MessageModel.isParticipant(matchId, userId);
       if (!ok) {

@@ -1,7 +1,27 @@
 import { Response } from 'express';
+import { ZodError } from 'zod';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware.js';
-import { PetModel, PetRecord } from '../models/pet.model.js';
+import { PetModel, PetRecord, PetInputSchema } from '../models/pet.model.js';
 import { ResponseView } from '../views/response.view.js';
+
+/**
+ * Valida formato/rango de los campos de mascota presentes en el body.
+ * Devuelve `true` y ya respondió 422 si el body es inválido; el caller
+ * debe cortar la ejecución en ese caso.
+ */
+function rejectIfInvalidPetInput(body: unknown, res: Response): boolean {
+  try {
+    PetInputSchema.parse(body);
+    return false;
+  } catch (err) {
+    if (err instanceof ZodError) {
+      ResponseView.error(res, 'Algunos datos de la mascota no son válidos', 422, err.errors);
+      return true;
+    }
+    ResponseView.internalError(res, err);
+    return true;
+  }
+}
 
 export class PetController {
   /**
@@ -69,6 +89,7 @@ export class PetController {
     }
 
     const body = req.body;
+    if (rejectIfInvalidPetInput(body, res)) return;
 
     // Validación ética: Protección del destete en cachorros de camadas
     if (body.is_litter && body.age_years < 0.16 && !body.weaning_completed) {
@@ -192,6 +213,8 @@ export class PetController {
     }
 
     const body = req.body;
+    if (rejectIfInvalidPetInput(body, res)) return;
+
     const editableFields = [
       'name', 'species', 'breed', 'age_years', 'gender', 'size', 'energy_level',
       'is_litter', 'birth_date', 'weaning_completed',
@@ -273,6 +296,8 @@ export class PetController {
     }
 
     const body = req.body;
+    if (rejectIfInvalidPetInput(body, res)) return;
+
     if (!body.relocation_reason || typeof body.relocation_reason !== 'string' || body.relocation_reason.trim().length < 15) {
       ResponseView.error(
         res,

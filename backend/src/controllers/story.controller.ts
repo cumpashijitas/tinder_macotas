@@ -29,16 +29,16 @@ export class StoryController {
 
     const { match_id, pet_name, title, content, photo_url } = req.body;
 
-    if (!pet_name || typeof pet_name !== 'string' || !pet_name.trim()) {
-      ResponseView.error(res, 'El nombre de la mascota es requerido', 400);
+    if (!pet_name || typeof pet_name !== 'string' || !pet_name.trim() || pet_name.trim().length > 80) {
+      ResponseView.error(res, 'El nombre de la mascota es requerido (máx. 80 caracteres)', 400);
       return;
     }
-    if (!title || typeof title !== 'string' || title.trim().length < 5) {
-      ResponseView.error(res, 'El título debe tener al menos 5 caracteres', 400);
+    if (!title || typeof title !== 'string' || title.trim().length < 5 || title.trim().length > 150) {
+      ResponseView.error(res, 'El título debe tener entre 5 y 150 caracteres', 400);
       return;
     }
-    if (!content || typeof content !== 'string' || content.trim().length < 20) {
-      ResponseView.error(res, 'El relato debe tener al menos 20 caracteres', 400);
+    if (!content || typeof content !== 'string' || content.trim().length < 20 || content.trim().length > 5000) {
+      ResponseView.error(res, 'El relato debe tener entre 20 y 5000 caracteres', 400);
       return;
     }
 

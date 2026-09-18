@@ -69,4 +69,28 @@ describe('AuthController.upsertProfile', () => {
     expect(payload.latitude).toBe(-34.6);
     expect(payload.longitude).toBe(-58.4);
   });
+
+  it('rechaza una latitud fuera de rango (-90..90)', async () => {
+    const req = {
+      user: { id: 'user-1' },
+      body: { full_name: 'Ana Torres', role: 'adopter', latitude: 200, longitude: -58.4 },
+    };
+    const res = mockRes();
+
+    await AuthController.upsertProfile(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('rechaza una longitud fuera de rango (-180..180)', async () => {
+    const req = {
+      user: { id: 'user-1' },
+      body: { full_name: 'Ana Torres', role: 'adopter', latitude: -34.6, longitude: -200 },
+    };
+    const res = mockRes();
+
+    await AuthController.upsertProfile(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
 });
