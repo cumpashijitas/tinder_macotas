@@ -63,12 +63,18 @@ export class MatchModel {
     return { items: hasMore ? rows.slice(0, limit) : rows, hasMore };
   }
 
+  /**
+   * `maybeSingle` a propósito: si el match no existe o pertenece a otro
+   * refugio, el filtro `shelter_id` no matchea ninguna fila y esto debe
+   * devolver `null` (404 en el controller) en vez de que `.single()` lo
+   * convierta en un error 500 genérico.
+   */
   static async updateStatus(
     matchId: string,
     shelterId: string,
     status: MatchRecord['status'],
     comments?: string
-  ): Promise<MatchRecord> {
+  ): Promise<MatchRecord | null> {
     const { data, error } = await supabaseAdmin
       .from('matches')
       .update({
@@ -79,9 +85,10 @@ export class MatchModel {
       .eq('id', matchId)
       .eq('shelter_id', shelterId)
       .select('*, pets(*)')
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!data) return null;
 
     const record = data as MatchRecord & { pets?: { name?: string } };
     const petName = record.pets?.name || 'la mascota';

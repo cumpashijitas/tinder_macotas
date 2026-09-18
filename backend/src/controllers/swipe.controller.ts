@@ -93,6 +93,10 @@ export class SwipeController {
 
     try {
       const updatedMatch = await MatchModel.updateStatus(id, shelterId, status, comments);
+      if (!updatedMatch) {
+        ResponseView.notFound(res, 'Solicitud no encontrada o no te pertenece');
+        return;
+      }
       await AuditLogModel.record(shelterId, `match_status_${status}`, 'matches', id, { comments: comments || null });
       ResponseView.success(res, updatedMatch, 'Estado de solicitud actualizado correctamente');
     } catch (err) {

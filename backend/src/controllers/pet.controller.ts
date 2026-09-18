@@ -207,6 +207,10 @@ export class PetController {
 
     try {
       const updated = await PetModel.updateStatus(id, userId, status);
+      if (!updated) {
+        ResponseView.notFound(res, 'Mascota no encontrada o no te pertenece');
+        return;
+      }
       ResponseView.success(res, updated, 'Estado de la mascota actualizado');
     } catch (err) {
       ResponseView.internalError(res, err);

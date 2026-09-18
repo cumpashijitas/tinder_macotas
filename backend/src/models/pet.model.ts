@@ -156,21 +156,27 @@ export class PetModel {
     return data as PetRecord;
   }
 
+  /**
+   * `maybeSingle` a propósito: si el ID no existe o pertenece a otro
+   * publicador, el filtro `shelter_id` no matchea ninguna fila y esto debe
+   * devolver `null` (404 en el controller) en vez de que `.single()` lo
+   * convierta en un error 500 genérico.
+   */
   static async updateStatus(
     id: string,
     shelterId: string,
     status: PetRecord['status']
-  ): Promise<PetRecord> {
+  ): Promise<PetRecord | null> {
     const { data, error } = await supabaseAdmin
       .from('pets')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', id)
       .eq('shelter_id', shelterId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
-    return data as PetRecord;
+    return data as PetRecord | null;
   }
 
   /**

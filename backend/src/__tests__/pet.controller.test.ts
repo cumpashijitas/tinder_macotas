@@ -93,6 +93,19 @@ describe('PetController.create', () => {
   });
 });
 
+describe('PetController.updateStatus (cross-tenant)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('devuelve 404 si la mascota no existe o pertenece a otro publicador', async () => {
+    const req = { user: { id: 'shelter-2' }, params: { id: 'pet-de-otro-shelter' }, body: { status: 'paused' } };
+    const res = mockRes();
+
+    await PetController.updateStatus(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+});
+
 describe('PetController.getFeed', () => {
   beforeEach(() => vi.clearAllMocks());
 

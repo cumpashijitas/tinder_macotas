@@ -53,6 +53,30 @@ describe('SwipeController.updateMatchStatus', () => {
   });
 });
 
+describe('SwipeController.updateMatchStatus (cross-tenant)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('devuelve 404 si el match no existe o pertenece a otro refugio, sin mutar nada', async () => {
+    mockAdmin.from.mockImplementationOnce((table: string) => {
+      expect(table).toBe('matches');
+      return createQueryBuilderMock({ data: null, error: null });
+    });
+
+    const req = {
+      user: { id: 'shelter-2', role: 'shelter' },
+      params: { id: 'match-de-otro-shelter' },
+      body: { status: 'approved_for_chat' },
+    };
+    const res = mockRes();
+
+    await SwipeController.updateMatchStatus(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    // No debe haber quedado ningún registro de auditoría de esta acción no autorizada
+    expect(mockAdmin.from).not.toHaveBeenCalledWith('audit_logs');
+  });
+});
+
 describe('SwipeController.getMatches', () => {
   beforeEach(() => vi.clearAllMocks());
 

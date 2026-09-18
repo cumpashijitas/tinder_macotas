@@ -54,4 +54,30 @@ describe('MessageController.send', () => {
 
     expect(res.status).toHaveBeenCalledWith(422);
   });
+
+  it('rechaza (403) enviar un mensaje a un match del que no se participa', async () => {
+    const req = {
+      user: { id: 'usuario-ajeno' },
+      params: { matchId: 'm1' },
+      body: { content: 'Hola, ¿el gatito sigue disponible?' },
+    };
+    const res = mockRes();
+
+    await MessageController.send(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+});
+
+describe('MessageController.list', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('rechaza (403) leer el chat de un match del que no se participa', async () => {
+    const req = { user: { id: 'usuario-ajeno' }, params: { matchId: 'm1' } };
+    const res = mockRes();
+
+    await MessageController.list(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
 });

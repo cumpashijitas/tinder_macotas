@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createSupabaseAdminMock, lastBuilderFor } from './helpers/supabaseMock.js';
+import { createSupabaseAdminMock, createQueryBuilderMock, lastBuilderFor } from './helpers/supabaseMock.js';
 
 const mockAdmin = createSupabaseAdminMock({
   adoption_contracts: {
@@ -52,6 +52,41 @@ describe('ContractController.sign', () => {
     const res = mockRes();
 
     await ContractController.sign(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+});
+
+describe('ContractController.get (cross-tenant)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('rechaza (403) leer el contrato de un match del que no se participa', async () => {
+    const req = { user: { id: 'usuario-ajeno' }, params: { matchId: 'match-1' } };
+    const res = mockRes();
+
+    // matches/getMatch con el mock por default devuelve null → no participante
+    await ContractController.get(req as never, res as never);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+});
+
+describe('ContractController.create (cross-tenant)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('rechaza (403) iniciar un contrato en un match cuyo refugio no es el usuario actual', async () => {
+    mockAdmin.from.mockImplementationOnce((table: string) => {
+      expect(table).toBe('matches');
+      return createQueryBuilderMock({
+        data: { adopter_id: 'adopter-1', shelter_id: 'shelter-1', status: 'approved_for_chat' },
+        error: null,
+      });
+    });
+
+    const req = { user: { id: 'shelter-2' }, params: { matchId: 'match-1' } };
+    const res = mockRes();
+
+    await ContractController.create(req as never, res as never);
 
     expect(res.status).toHaveBeenCalledWith(403);
   });
